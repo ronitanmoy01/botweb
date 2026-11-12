@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ page_title ~ " · " if page_title }}{{ site_name }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ site_name }}{% endblock %}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#0F1015",
+            surface: "#181A22",
+            card: "#20232D",
+            accent: "#E50914"
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+</head>
+<body class="flex h-full flex-col bg-ink font-sans text-white antialiased">
+  {% include "components/header.html" %}
+  <main class="flex-1">
+    {% block content %}{% endblock %}
+  </main>
+  {% include "components/footer.html" %}
+</body>
+</html>

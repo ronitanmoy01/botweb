@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-7xl px-4 py-12">
+  <h1 class="text-3xl font-bold">Users</h1>
+  <p class="mt-2 text-gray-400">Change roles and ban or unban accounts. Admin accounts can only be changed by a super admin.</p>
+
+  {% if flash_message %}
+  <div class="mt-4 rounded-lg bg-green-500/10 border border-green-500/20 px-4 py-3 text-green-400">{{ flash_message }}</div>
+  {% endif %}
+
+  <div class="mt-8 overflow-x-auto rounded-lg bg-card">
+    <table class="w-full text-left text-sm">
+      <thead class="border-b border-white/10 text-gray-400">
+        <tr>
+          <th class="px-4 py-3 font-medium">User</th>
+          <th class="px-4 py-3 font-medium">Role</th>
+          <th class="px-4 py-3 font-medium">Status</th>
+          <th class="px-4 py-3 font-medium">Joined</th>
+          <th class="px-4 py-3 font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        {% set is_self = u.id == actor.id %}
+        {% set is_admin_account = u.role in ['super_admin', 'admin'] %}
+        {% set can_manage = actor.role == 'super_admin' or not is_admin_account %}
+        <tr class="border-b border-white/5">
+          <td class="px-4 py-3">
+            <p class="font-semibold">{{ u.display_name or u.email.split('@')[0] }}{% if is_self %} <span class="text-xs text-accent">(you)</span>{% endif %}</p>
+            <p class="text-xs text-gray-400">{{ u.email }}</p>
+          </td>
+          <td class="px-4 py-3">
+            {% if actor.role == 'super_admin' and not is_self %}
+            <form method="post" action="/admin-panel/users/{{ u.id }}/role/" class="flex gap-2">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <select name="role" class="rounded border border-white/10 bg-surface px-2 py-1 text-white">
+                {% for r in roles %}
+                <option value="{{ r }}" {% if r == u.role %}selected{% endif %}>{{ r.replace('_', ' ') }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="text-blue-400 hover:underline">Save</button>
+            </form>
+            {% else %}
+            <span class="rounded-full bg-accent/20 px-3 py-1 text-xs text-accent">{{ u.role.replace('_', ' ') }}</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            {% if u.is_active %}
+            <span class="text-green-400">Active</span>
+            {% else %}
+            <span class="text-red-400">Banned</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-gray-400">{{ u.created_at.strftime('%d %b %Y') if u.created_at else '' }}</td>
+          <td class="px-4 py-3">
+            {% if can_manage and not is_self %}
+            <form method="post" action="/admin-panel/users/{{ u.id }}/status/" class="inline" {% if u.is_active %}onsubmit="return confirm('Ban {{ u.email|e }}?')"{% endif %}>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="hidden" name="is_active" value="{{ 'false' if u.is_active else 'true' }}">
+              {% if u.is_active %}
+              <button type="submit" class="text-red-400 hover:underline">Ban</button>
+              {% else %}
+              <button type="submit" class="text-green-400 hover:underline">Unban</button>
+              {% endif %}
+            </form>
+            {% else %}
+            <span class="text-xs text-gray-600">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

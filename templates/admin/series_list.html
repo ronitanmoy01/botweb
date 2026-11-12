@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-7xl px-4 py-12">
+  <div class="mb-6 flex items-center justify-between">
+    <h1 class="text-3xl font-bold">TV Series</h1>
+    <a href="/admin-panel/series/new/" class="rounded-full bg-accent px-4 py-2 text-sm font-semibold hover:opacity-90">Add series</a>
+  </div>
+
+  {% if series %}
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {% for s in series %}
+    <div class="rounded-lg bg-card p-4">
+      <div class="flex items-start justify-between">
+        <div class="flex-1">
+          <h3 class="font-semibold">{{ s.title }}</h3>
+          <div class="mt-1 text-sm text-gray-400">
+            {{ s.status }}
+            {% if s.release_year %} · {{ s.release_year }}{% endif %}
+            {% if s.rating %} · ⭐ {{ "%.1f"|format(s.rating) }}{% endif %}
+          </div>
+          {% if s.genres %}
+          <div class="mt-2 flex flex-wrap gap-1">
+            {% for genre in s.genres %}
+            <span class="rounded bg-surface px-2 py-0.5 text-xs text-gray-300">{{ genre.name }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="ml-2 flex gap-1 text-xs">
+          <span class="{% if s.is_featured %}text-accent{% else %}text-gray-500{% endif %}">
+            {% if s.is_featured %}★{% else %}☆{% endif %}
+          </span>
+          <span class="{% if s.is_exclusive %}text-accent{% else %}text-gray-500{% endif %}">
+            {% if s.is_exclusive %}🔒{% else %}🔓{% endif %}
+          </span>
+        </div>
+      </div>
+      <div class="mt-3 flex gap-2 text-sm">
+        <a href="/admin-panel/series/{{ s.id }}/edit/" class="text-blue-400 hover:underline">Edit</a>
+        <a href="/series/{{ s.slug }}/" target="_blank" class="text-gray-400 hover:underline">View</a>
+        <form method="post" action="/admin-panel/series/{{ s.id }}/delete/" class="inline" onsubmit="return confirm('Delete this series and its seasons?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="text-red-400 hover:underline">Delete</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-400">No series yet. Add your first one above.</p>
+  {% endif %}
+</section>
+{% endblock %}

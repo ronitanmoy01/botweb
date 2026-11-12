@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-7xl px-4 py-12">
+  <h1 class="text-3xl font-bold">Audit log</h1>
+  <p class="mt-2 text-gray-400">The 200 most recent admin actions, newest first.</p>
+
+  <div class="mt-8 overflow-x-auto rounded-lg bg-card">
+    <table class="w-full text-left text-sm">
+      <thead class="border-b border-white/10 text-gray-400">
+        <tr>
+          <th class="px-4 py-3 font-medium">When (UTC)</th>
+          <th class="px-4 py-3 font-medium">Who</th>
+          <th class="px-4 py-3 font-medium">Action</th>
+          <th class="px-4 py-3 font-medium">Target</th>
+          <th class="px-4 py-3 font-medium">Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr class="border-b border-white/5">
+          <td class="px-4 py-2 text-gray-400">{{ row.created_at.strftime('%d %b %Y %H:%M') if row.created_at else '' }}</td>
+          <td class="px-4 py-2">{{ row.actor_email }}</td>
+          <td class="px-4 py-2 font-mono text-xs">{{ row.action }}</td>
+          <td class="px-4 py-2">{{ row.target }}</td>
+          <td class="px-4 py-2 text-gray-400">{{ row.detail }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">No actions logged yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

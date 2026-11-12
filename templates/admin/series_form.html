@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-3xl px-4 py-12">
+  <h1 class="text-3xl font-bold">{{ "Edit series" if series else "Add series" }}</h1>
+
+  {% if flash_message %}
+  <div class="mt-4 rounded-lg bg-green-500/10 border border-green-500/20 px-4 py-3 text-green-400">
+    {{ flash_message }}
+  </div>
+  {% endif %}
+
+  {% if errors %}
+  {% include "components/form_errors.html" %}
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="mt-6 space-y-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <div>
+      <label class="block text-sm font-semibold">Title <span class="text-accent">*</span></label>
+      <input type="text" name="title" value="{{ series.title if series else '' }}" required class="mt-1 w-full rounded-lg border border-white/10 bg-card px-4 py-2 text-white focus:border-accent focus:outline-none">
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold">Original title</label>
+      <input type="text" name="original_title" value="{{ series.original_title if series else '' }}" class="mt-1 w-full rounded-lg border border-white/10 bg-card px-4 py-2 text-white focus:border-accent focus:outline-none">
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div>
+        <label class="block text-sm font-semibold">Release year</label>
+        <input type="number" name="release_year" value="{{ series.release_year if series else '' }}" class="mt-1 w-full rounded-lg border border-white/10 bg-card px-4 py-2 text-white focus:border-accent focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold">Rating (0-10)</label>
+        <input type="number" name="rating" step="0.1" min="0" max="10" value="{{ series.rating if series else '' }}" class="mt-1 w-full rounded-lg border border-white/10 bg-card px-4 py-2 text-white focus:border-accent focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold">Age rating</label>
+        <input type="text" name="age_rating" value="{{ series.age_rating if series else '' }}" placeholder="TV-PG, TV-14, TV-MA, etc." class="mt-1 w-full rounded-lg border border-white/10 bg-card px-4 py-2 text-white focus:border-accent focus:outline-none">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold">Trailer URL</label>
+      <input type="text" name="trailer_url" value="{{ series.trailer_url or '' if series else '' }}" placeholder="https://youtube.com/watch?v=..." class="mt-1 w-full rounded-lg border border-white/10 bg-card px-4 py-2 text-white focus:border-accent focus:outline-none">
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold">Short description</label>
+      <input type="text" name="short_description" value="{{ series.short_description if series else '' }}" maxlength="500" class="mt-1 w-full rounded-lg border border-white/10 bg-card px-4 py-2 text-white focus:border-accent focus:outline-none">
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold">Description</label>
+      <textarea name="description" rows="5" class="mt-1 w-full rounded-lg border border-white/10 bg-card px-4 py-2 text-white focus:border-accent focus:outline-none">{{ series.description if series else '' }}</textarea>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold">Genres</label>
+      <div class="mt-2 flex flex-wrap gap-2">
+        {% for genre in all_genres %}
+        <label class="flex items-center gap-2 rounded-lg border border-white/10 bg-card px-3 py-2 text-sm hover:bg-white/5">
+          <input type="checkbox" name="genre_ids" value="{{ genre.id }}" {% if series and genre in series.genres %}checked{% endif %} class="h-4 w-4">
+          {{ genre.name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold">Categories</label>
+      <div class="mt-2 flex flex-wrap gap-2">
+        {% for category in all_categories %}
+        <label class="flex items-center gap-2 rounded-lg border border-white/10 bg-card px-3 py-2 text-sm hover:bg-white/5">
+          <input type="checkbox" name="category_ids" value="{{ category.id }}" {% if series and category in series.categories %}checked{% endif %} class="h-4 w-4">
+          {{ category.name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold">Languages</label>
+      <div class="mt-2 flex flex-wrap gap-2">
+        {% for language in all_languages %}
+        <label class="flex items-center gap-2 rounded-lg border border-white/10 bg-card px-3 py-2 text-sm hover:bg-white/5">
+          <input type="checkbox" name="language_ids" value="{{ language.id }}" {% if series and language in series.languages %}checked{% endif %} class="h-4 w-4">
+          {{ language.name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold">Countries</label>
+      <div class="mt-2 flex flex-wrap gap-2">
+        {% for country in all_countries %}
+        <label class="flex items-center gap-2 rounded-lg border border-white/10 bg-card px-3 py-2 text-sm hover:bg-white/5">
+          <input type="checkbox" name="country_ids" value="{{ country.id }}" {% if series and country in series.countries %}checked{% endif %} class="h-4 w-4">
+          {{ country.name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold">Poster</label>
+      <input type="file" name="poster" accept="image/*" class="mt-1 w-full text-sm text-gray-300">
+      {% if series and series.poster_path %}
+      <p class="mt-1 text-xs text-gray-400">Current: {{ series.poster_path }}</p>
+      {% endif %}
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold">Backdrop</label>
+      <input type="file" name="backdrop" accept="image/*" class="mt-1 w-full text-sm text-gray-300">
+      {% if series and series.backdrop_path %}
+      <p class="mt-1 text-xs text-gray-400">Current: {{ series.backdrop_path }}</p>
+      {% endif %}
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="block text-sm font-semibold">Status</label>
+        <select name="status" class="mt-1 w-full rounded-lg border border-white/10 bg-card px-4 py-2 text-white focus:border-accent focus:outline-none">
+          <option value="draft" {% if series and series.status == 'draft' %}selected{% endif %}>Draft</option>
+          <option value="published" {% if series and series.status == 'published' %}selected{% endif %}>Published</option>
+          <option value="archived" {% if series and series.status == 'archived' %}selected{% endif %}>Archived</option>
+        </select>
+      </div>
+      <div class="flex flex-col justify-end gap-2">
+        <label class="flex items-center gap-2">
+          <input type="hidden" name="is_featured" value="false">
+          <input type="checkbox" name="is_featured" value="true" {% if series and series.is_featured %}checked{% endif %} class="h-4 w-4">
+          <span class="text-sm font-semibold">Featured on homepage</span>
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="hidden" name="is_exclusive" value="false">
+          <input type="checkbox" name="is_exclusive" value="true" {% if series and series.is_exclusive %}checked{% endif %} class="h-4 w-4">
+          <span class="text-sm font-semibold">Exclusive content</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="rounded-full bg-accent px-6 py-2 font-semibold hover:opacity-90">Save</button>
+      <a href="/admin-panel/series/" class="rounded-full border border-white/10 px-6 py-2 font-semibold hover:bg-white/5">Cancel</a>
+    </div>
+  </form>
+
+  {% if series %}
+  <form method="post" action="/admin-panel/series/{{ series.id }}/delete/" class="mt-6 border-t border-white/10 pt-6"
+        onsubmit="return confirm('Delete this series and its seasons?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="text-sm text-red-400 hover:underline">Delete series</button>
+  </form>
+
+  <div class="mt-12 border-t border-white/10 pt-8">
+    <h2 class="text-2xl font-bold">Seasons & Episodes</h2>
+
+    <form method="post" action="/admin-panel/series/{{ series.id }}/seasons/add/" class="mt-4 rounded-lg bg-card p-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="text-sm font-semibold">Add Season</div>
+      <div class="mt-2 grid gap-3 sm:grid-cols-3">
+        <input type="number" name="number" placeholder="Season number" required class="rounded border border-white/10 bg-surface px-3 py-2 text-sm text-white">
+        <input type="text" name="title" placeholder="Title (optional)" class="rounded border border-white/10 bg-surface px-3 py-2 text-sm text-white">
+        <input type="number" name="release_year" placeholder="Year" class="rounded border border-white/10 bg-surface px-3 py-2 text-sm text-white">
+      </div>
+      <textarea name="description" rows="2" placeholder="Description (optional)" class="mt-2 w-full rounded border border-white/10 bg-surface px-3 py-2 text-sm text-white"></textarea>
+      <button type="submit" class="mt-2 rounded bg-accent px-4 py-1.5 text-sm font-semibold hover:opacity-90">Add Season</button>
+    </form>
+
+    <div class="mt-6 space-y-4">
+      {% for season in series.seasons %}
+      <div class="rounded-lg border border-white/10 bg-card p-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="font-semibold">Season {{ season.number }}{% if season.title %}: {{ season.title }}{% endif %}</div>
+            {% if season.release_year %}<div class="text-sm text-gray-400">{{ season.release_year }}</div>{% endif %}
+            {% if season.description %}<p class="mt-1 text-sm text-gray-300">{{ season.description }}</p>{% endif %}
+          </div>
+          <form method="post" action="/admin-panel/series/{{ series.id }}/seasons/{{ season.id }}/delete/" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" onclick="return confirm('Delete season {{ season.number }} and all its episodes?')" class="text-sm text-red-400 hover:underline">Delete</button>
+          </form>
+        </div>
+
+        <div class="mt-4 border-t border-white/5 pt-4">
+          <form method="post" action="/admin-panel/series/{{ series.id }}/seasons/{{ season.id }}/episodes/add/" class="rounded bg-surface p-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="text-xs font-semibold text-gray-400">Add Episode</div>
+            <div class="mt-2 grid gap-2 sm:grid-cols-3">
+              <input type="number" name="number" placeholder="Ep #" required class="rounded border border-white/10 bg-card px-2 py-1 text-sm text-white">
+              <input type="text" name="title" placeholder="Title" required class="col-span-2 rounded border border-white/10 bg-card px-2 py-1 text-sm text-white">
+            </div>
+            <div class="mt-2 grid gap-2 sm:grid-cols-2">
+              <input type="number" name="runtime_minutes" placeholder="Runtime (min)" class="rounded border border-white/10 bg-card px-2 py-1 text-sm text-white">
+              <input type="date" name="air_date" class="rounded border border-white/10 bg-card px-2 py-1 text-sm text-white">
+            </div>
+            <textarea name="description" rows="2" placeholder="Description" class="mt-2 w-full rounded border border-white/10 bg-card px-2 py-1 text-sm text-white"></textarea>
+            <button type="submit" class="mt-2 rounded bg-accent px-3 py-1 text-xs font-semibold hover:opacity-90">Add Episode</button>
+          </form>
+
+          {% if season.episodes %}
+          <div class="mt-3 space-y-1">
+            {% for ep in season.episodes %}
+            <div class="flex items-start justify-between rounded bg-surface px-3 py-2 text-sm">
+              <div class="flex-1">
+                <span class="font-semibold">{{ ep.number }}. {{ ep.title }}</span>
+                {% if ep.runtime_minutes %}<span class="text-gray-400"> · {{ ep.runtime_minutes }}min</span>{% endif %}
+                {% if ep.air_date %}<span class="text-gray-400"> · {{ ep.air_date.strftime('%Y-%m-%d') if ep.air_date else '' }}</span>{% endif %}
+                {% if ep.description %}<p class="mt-1 text-xs text-gray-400">{{ ep.description[:80] }}{% if ep.description|length > 80 %}...{% endif %}</p>{% endif %}
+              </div>
+              <form method="post" action="/admin-panel/series/{{ series.id }}/seasons/{{ season.id }}/episodes/{{ ep.id }}/delete/" class="ml-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" onclick="return confirm('Delete episode {{ ep.number }}?')" class="text-xs text-red-400 hover:underline">Del</button>
+              </form>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="mt-3 text-xs text-gray-500">No episodes yet</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if not series.seasons %}
+    <p class="mt-4 text-sm text-gray-400">No seasons yet. Add one above.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

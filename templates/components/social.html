@@ -1,0 +1,79 @@
+{# Expects: kind ('movie'|'series'), item, reviews, comments, is_favorite, in_watchlist, current_user #}
+<div class="mt-8 flex flex-wrap gap-3">
+  {% if current_user %}
+  {% set toggle = 'remove' if is_favorite else 'add' %}
+  <form method="post" action="/api/favorite/{{ toggle }}/">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="{{ kind }}_id" value="{{ item.id }}">
+    <input type="hidden" name="next" value="{{ request.url.path }}">
+    <button type="submit" class="rounded-full border border-white/10 px-5 py-2 text-sm font-semibold hover:bg-white/5">
+      {{ "♥ Remove from favorites" if is_favorite else "♡ Add to favorites" }}
+    </button>
+  </form>
+  {% set wl_toggle = 'remove' if in_watchlist else 'add' %}
+  <form method="post" action="/api/watchlist/{{ wl_toggle }}/">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="{{ kind }}_id" value="{{ item.id }}">
+    <input type="hidden" name="next" value="{{ request.url.path }}">
+    <button type="submit" class="rounded-full border border-white/10 px-5 py-2 text-sm font-semibold hover:bg-white/5">
+      {{ "✓ On watchlist" if in_watchlist else "+ Add to watchlist" }}
+    </button>
+  </form>
+  {% else %}
+  <a href="/login/" class="rounded-full border border-white/10 px-5 py-2 text-sm font-semibold hover:bg-white/5">Log in to save or review</a>
+  {% endif %}
+</div>
+
+<div class="mt-12 grid gap-10 lg:grid-cols-2">
+  <div>
+    <h2 class="text-2xl font-bold">Reviews</h2>
+    {% if current_user %}
+    <form method="post" action="/{{ kind }}/{{ item.slug }}/reviews/" class="mt-4 space-y-3 rounded-lg bg-card p-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="flex gap-3">
+        <select name="rating" required class="rounded border border-white/10 bg-surface px-3 py-2 text-sm text-white">
+          {% for n in range(10, 0, -1) %}<option value="{{ n }}">{{ n }} / 10</option>{% endfor %}
+        </select>
+        <input type="text" name="title" maxlength="200" required placeholder="Title" class="flex-1 rounded border border-white/10 bg-surface px-3 py-2 text-sm text-white">
+      </div>
+      <textarea name="content" rows="3" maxlength="2000" required placeholder="Your review" class="w-full rounded border border-white/10 bg-surface px-3 py-2 text-sm text-white"></textarea>
+      <button type="submit" class="rounded bg-accent px-4 py-1.5 text-sm font-semibold hover:opacity-90">Submit review</button>
+    </form>
+    {% endif %}
+    <div class="mt-4 space-y-4">
+      {% for review in reviews %}
+      <div class="rounded-lg bg-card p-4">
+        <div class="flex items-center justify-between text-sm">
+          <span class="font-semibold">{{ review.title }}</span>
+          <span class="text-accent">{{ "%.1f"|format(review.rating) }} / 10</span>
+        </div>
+        <div class="mt-1 text-xs text-gray-400">{{ review.author.display_name or review.author.email.split('@')[0] }}</div>
+        <p class="mt-2 whitespace-pre-line text-sm text-gray-300">{{ review.content }}</p>
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-500">No reviews yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div>
+    <h2 class="text-2xl font-bold">Comments</h2>
+    {% if current_user %}
+    <form method="post" action="/{{ kind }}/{{ item.slug }}/comments/" class="mt-4 space-y-3 rounded-lg bg-card p-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <textarea name="content" rows="3" maxlength="2000" required placeholder="Add a comment" class="w-full rounded border border-white/10 bg-surface px-3 py-2 text-sm text-white"></textarea>
+      <button type="submit" class="rounded bg-accent px-4 py-1.5 text-sm font-semibold hover:opacity-90">Post comment</button>
+    </form>
+    {% endif %}
+    <div class="mt-4 space-y-4">
+      {% for comment in comments %}
+      <div class="rounded-lg bg-card p-4">
+        <div class="text-xs text-gray-400">{{ comment.author.display_name or comment.author.email.split('@')[0] }}</div>
+        <p class="mt-2 whitespace-pre-line text-sm text-gray-300">{{ comment.content }}</p>
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-500">No comments yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>

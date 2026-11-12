@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-6xl px-4 py-8">
+  <!-- Profile Header -->
+  <div class="rounded-lg bg-gradient-to-r from-accent/10 via-purple-500/10 to-blue-500/10 border border-white/10 p-8">
+    <div class="flex items-start justify-between">
+      <div class="flex items-center gap-6">
+        <div class="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-accent to-purple-600 text-3xl font-bold">
+          {{ user.display_name[0].upper() if user.display_name else user.email[0].upper() }}
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold">{{ user.display_name or user.email.split('@')[0] }}</h1>
+          <p class="mt-1 text-gray-400">{{ user.email }}</p>
+          <div class="mt-2 flex items-center gap-3 text-sm">
+            <span class="rounded-full bg-accent/20 px-3 py-1 text-accent">{{ user.role.replace('_', ' ').title() }}</span>
+            <span class="block text-gray-400">Member since {{ user.created_at.day }} {{ user.created_at.strftime('%B %Y') }}</span>
+          </div>
+        </div>
+      </div>
+      {% if user.role in admin_roles %}
+      <a href="/admin-panel/" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold hover:opacity-90">Admin Panel</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Activity Stats -->
+  <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="rounded-lg bg-card border border-white/10 p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-400">Favorites</p>
+          <p class="mt-2 text-3xl font-bold">{{ favorites_count }}</p>
+        </div>
+        <div class="rounded-full bg-red-500/20 p-3">
+          <svg class="h-6 w-6 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/></svg>
+        </div>
+      </div>
+      <a href="/my/favorites/" class="mt-3 block text-xs text-accent hover:underline">View all →</a>
+    </div>
+
+    <div class="rounded-lg bg-card border border-white/10 p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-400">Watchlist</p>
+          <p class="mt-2 text-3xl font-bold">{{ watchlist_count }}</p>
+        </div>
+        <div class="rounded-full bg-blue-500/20 p-3">
+          <svg class="h-6 w-6 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+        </div>
+      </div>
+      <a href="/my/watchlist/" class="mt-3 block text-xs text-accent hover:underline">View all →</a>
+    </div>
+
+    <div class="rounded-lg bg-card border border-white/10 p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-400">Reviews</p>
+          <p class="mt-2 text-3xl font-bold">{{ reviews_count }}</p>
+        </div>
+        <div class="rounded-full bg-yellow-500/20 p-3">
+          <svg class="h-6 w-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-lg bg-card border border-white/10 p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-400">Comments</p>
+          <p class="mt-2 text-3xl font-bold">{{ comments_count }}</p>
+        </div>
+        <div class="rounded-full bg-green-500/20 p-3">
+          <svg class="h-6 w-6 text-green-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-6 grid gap-6 lg:grid-cols-3">
+    <!-- Recent Favorites -->
+    <div class="lg:col-span-2">
+      <div class="rounded-lg bg-card border border-white/10 p-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold">Recent Favorites</h2>
+          <a href="/my/favorites/" class="text-sm text-accent hover:underline">View all</a>
+        </div>
+        {% if recent_favorites %}
+        <div class="mt-4 grid gap-3 sm:grid-cols-2">
+          {% for fav in recent_favorites %}
+          {% if fav.movie_id %}
+          <a href="/movie/{{ fav.movie.slug }}/" class="flex items-center gap-3 rounded-lg border border-white/10 p-3 hover:bg-white/5">
+            {% if fav.movie.poster_path %}
+            <img src="/{{ fav.movie.poster_path }}" alt="{{ fav.movie.title }}" class="h-20 w-14 rounded object-cover">
+            {% else %}
+            <div class="flex h-20 w-14 items-center justify-center rounded bg-surface text-xs text-gray-600">No poster</div>
+            {% endif %}
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold truncate">{{ fav.movie.title }}</p>
+              <p class="text-xs text-gray-400">{{ fav.movie.release_year or "—" }}</p>
+              {% if fav.movie.rating %}
+              <div class="mt-1 flex items-center gap-1 text-xs text-accent">
+                <svg class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                {{ "%.1f"|format(fav.movie.rating) }}
+              </div>
+              {% endif %}
+            </div>
+          </a>
+          {% else %}
+          <a href="/series/{{ fav.series.slug }}/" class="flex items-center gap-3 rounded-lg border border-white/10 p-3 hover:bg-white/5">
+            {% if fav.series.poster_path %}
+            <img src="/{{ fav.series.poster_path }}" alt="{{ fav.series.title }}" class="h-20 w-14 rounded object-cover">
+            {% else %}
+            <div class="flex h-20 w-14 items-center justify-center rounded bg-surface text-xs text-gray-600">No poster</div>
+            {% endif %}
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold truncate">{{ fav.series.title }}</p>
+              <p class="text-xs text-gray-400">{{ fav.series.release_year or "—" }} • Series</p>
+              {% if fav.series.rating %}
+              <div class="mt-1 flex items-center gap-1 text-xs text-accent">
+                <svg class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                {{ "%.1f"|format(fav.series.rating) }}
+              </div>
+              {% endif %}
+            </div>
+          </a>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="mt-4 text-sm text-gray-400">No favorites yet. Start adding movies and series you love!</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent Reviews -->
+    <div>
+      <div class="rounded-lg bg-card border border-white/10 p-6">
+        <h2 class="text-xl font-bold">Recent Reviews</h2>
+        {% if recent_reviews %}
+        <div class="mt-4 space-y-4">
+          {% for review in recent_reviews %}
+          <div class="rounded-lg border border-white/10 p-3">
+            <div class="flex items-center justify-between">
+              <p class="font-semibold text-sm truncate">{{ review.title }}</p>
+              <span class="ml-2 flex items-center gap-1 text-xs text-accent">
+                <svg class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                {{ review.rating }}
+              </span>
+            </div>
+            <p class="mt-2 text-xs text-gray-300 line-clamp-2">{{ review.content }}</p>
+            <p class="mt-2 text-xs text-gray-500">{{ review.created_at.strftime('%b %d, %Y') }}</p>
+            {% if not review.is_approved %}
+            <span class="mt-2 inline-block text-xs rounded-full bg-yellow-500/20 px-2 py-0.5 text-yellow-400">Pending approval</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="mt-4 text-sm text-gray-400">No reviews yet. Share your thoughts on movies and series!</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+</style>
+{% endblock %}

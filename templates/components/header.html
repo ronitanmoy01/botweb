@@ -1,0 +1,77 @@
+<header class="sticky top-0 z-50 border-b border-white/5 bg-surface/95 backdrop-blur">
+  <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+    <a href="/" class="text-xl font-bold tracking-tight text-accent">{{ site_name }}</a>
+
+    <nav class="hidden items-center gap-5 text-sm text-gray-300 lg:flex" aria-label="Primary">
+      <a href="/" class="hover:text-white">Home</a>
+      <a href="/movies/" class="hover:text-white">Movies</a>
+      <a href="/series/" class="hover:text-white">TV Series</a>
+      <a href="/category/" class="hover:text-white">Categories</a>
+      <a href="/genre/" class="hover:text-white">Genres</a>
+      <a href="/language/" class="hover:text-white">Languages</a>
+      <a href="/exclusive/" class="hover:text-white">Exclusive</a>
+      <a href="/latest/" class="hover:text-white">Latest</a>
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <a href="/search/" aria-label="Search" class="rounded-full p-2 hover:bg-white/10">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </a>
+      {% if current_user %}
+      <details class="group relative hidden sm:block">
+        <summary class="flex cursor-pointer items-center gap-2 rounded-full bg-card px-4 py-1.5 text-sm font-semibold hover:bg-card/80 list-none">
+          <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+          <span>{{ current_user.display_name or current_user.email.split('@')[0] }}</span>
+        </summary>
+        <nav class="absolute right-0 top-full mt-2 w-48 rounded-lg border border-white/10 bg-card py-2 shadow-xl hidden group-open:block">
+          {% if current_user.role in admin_roles %}
+          <a href="/admin-panel/" class="block px-4 py-2 text-sm hover:bg-white/5">Admin panel</a>
+          {% endif %}
+          <a href="/profile/" class="block px-4 py-2 text-sm hover:bg-white/5">Profile</a>
+          <a href="/my/favorites/" class="block px-4 py-2 text-sm hover:bg-white/5">My favorites</a>
+          <a href="/my/watchlist/" class="block px-4 py-2 text-sm hover:bg-white/5">My watchlist</a>
+          <form method="post" action="/logout/" class="border-t border-white/5 mt-2 pt-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-white/5">Logout</button>
+          </form>
+        </nav>
+      </details>
+      {% else %}
+      <a href="/login/" class="hidden rounded-full bg-accent px-4 py-1.5 text-sm font-semibold hover:opacity-90 sm:inline-block">Login</a>
+      {% endif %}
+
+      <details class="group lg:hidden">
+        <summary class="cursor-pointer list-none rounded-full p-2 hover:bg-white/10" aria-label="Open menu">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </summary>
+        <nav class="absolute left-0 right-0 top-full flex flex-col gap-1 border-t border-white/5 bg-surface p-4 text-gray-200" aria-label="Mobile">
+          <a href="/" class="rounded px-3 py-2 hover:bg-white/5">Home</a>
+          <a href="/movies/" class="rounded px-3 py-2 hover:bg-white/5">Movies</a>
+          <a href="/series/" class="rounded px-3 py-2 hover:bg-white/5">TV Series</a>
+          <a href="/category/" class="rounded px-3 py-2 hover:bg-white/5">Categories</a>
+          <a href="/genre/" class="rounded px-3 py-2 hover:bg-white/5">Genres</a>
+          <a href="/language/" class="rounded px-3 py-2 hover:bg-white/5">Languages</a>
+          <a href="/exclusive/" class="rounded px-3 py-2 hover:bg-white/5">Exclusive</a>
+          <a href="/latest/" class="rounded px-3 py-2 hover:bg-white/5">Latest</a>
+          {% if current_user %}
+          <div class="border-t border-white/5 pt-2 mt-2">
+            <div class="px-3 py-2 text-sm text-gray-400">{{ current_user.email }}</div>
+            {% if current_user.role in admin_roles %}
+            <a href="/admin-panel/" class="block rounded px-3 py-2 hover:bg-white/5">Admin panel</a>
+            {% endif %}
+            <a href="/profile/" class="block rounded px-3 py-2 hover:bg-white/5">Profile</a>
+            <a href="/my/favorites/" class="block rounded px-3 py-2 hover:bg-white/5">My favorites</a>
+            <a href="/my/watchlist/" class="block rounded px-3 py-2 hover:bg-white/5">My watchlist</a>
+            <form method="post" action="/logout/" class="mt-1">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button type="submit" class="w-full rounded px-3 py-2 text-left text-gray-300 hover:bg-white/5">Logout</button>
+            </form>
+          </div>
+          {% else %}
+          <a href="/login/" class="rounded px-3 py-2 font-semibold text-accent hover:bg-white/5">Login</a>
+          {% endif %}
+        </nav>
+      </details>
+    </div>
+  </div>
+</header>

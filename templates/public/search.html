@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-7xl px-4 py-12">
+  <h1 class="text-3xl font-bold">Search</h1>
+
+  <form id="search-form" method="get" action="/search/" class="mt-6" role="search">
+    <div class="flex gap-2">
+      <input id="search-input" type="search" name="q" value="{{ query }}" autocomplete="off" placeholder="Search movies and series..." class="flex-1 rounded-lg border border-white/10 bg-card px-4 py-3 text-white focus:border-accent focus:outline-none">
+      <button type="submit" class="rounded-lg bg-accent px-6 py-3 font-semibold hover:opacity-90">Search</button>
+    </div>
+    <p id="search-status" class="mt-2 min-h-5 text-xs text-gray-500" aria-live="polite"></p>
+  </form>
+
+  <div id="search-results">
+    {% include "public/_search_results.html" %}
+  </div>
+</section>
+
+<script>
+(() => {
+  const form = document.getElementById('search-form');
+  const input = document.getElementById('search-input');
+  const results = document.getElementById('search-results');
+  const statusEl = document.getElementById('search-status');
+  const MIN_CHARS = 2;      // live search starts at 2 characters
+  const DEBOUNCE_MS = 300;  // wait for a pause in typing before requesting
+  const MAX_CHARS = 100;    // matches the server-side limit
+  const cache = new Map();  // query -> HTML, so retyping a query costs no request
+  let timer = null;
+  let controller = null;
+
+  const clean = (value) => value.trim().slice(0, MAX_CHARS);
+  const urlFor = (q) => '/search/' + (q ? '?q=' + encodeURIComponent(q) : '');
+
+  function clear() {
+    if (controller) controller.abort();
+    results.innerHTML = '';
+    statusEl.textContent = '';
+  }
+
+  async function show(q) {
+    if (controller) controller.abort();   // drop any older in-flight request
+    if (!q) return clear();
+    const key = q.toLowerCase();
+    if (cache.has(key)) {
+      results.innerHTML = cache.get(key);
+      statusEl.textContent = '';
+      return;
+    }
+    controller = new AbortController();
+    statusEl.textContent = 'Searching...';
+    try {
+      const res = await fetch('/search/results/?q=' + encodeURIComponent(q), {
+        signal: controller.signal,
+        headers: { 'Accept': 'text/html' },
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const html = await res.text();
+      if (cache.size >= 50) cache.delete(cache.keys().next().value);
+      cache.set(key, html);
+      results.innerHTML = html;
+      statusEl.textContent = '';
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      statusEl.textContent = 'Search failed. Please try again.';
+    }
+  }
+
+  // Live search while typing: debounced, and only after MIN_CHARS.
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      const q = clean(input.value);
+      if (q.length < MIN_CHARS) return clear();
+      history.replaceState(null, '', urlFor(q));
+      show(q);
+    }, DEBOUNCE_MS);
+  });
+
+  // Search button / Enter: search immediately, no full page reload.
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearTimeout(timer);
+    const q = clean(input.value);
+    history.pushState(null, '', urlFor(q));
+    show(q);
+  });
+
+  // Back / forward between searches.
+  window.addEventListener('popstate', () => {
+    const q = clean(new URLSearchParams(location.search).get('q') || '');
+    input.value = q;
+    show(q);
+  });
+})();
+</script>
+{% endblock %}

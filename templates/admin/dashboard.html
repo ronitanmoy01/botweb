@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-7xl px-4 py-8">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold">Admin Dashboard</h1>
+      <p class="mt-1 text-sm text-gray-400">{{ admin.email }} • {{ admin.role.replace('_', ' ').title() }}</p>
+    </div>
+    <a href="/" class="rounded-lg bg-card px-4 py-2 text-sm hover:bg-card/80">← Back to Site</a>
+  </div>
+
+  <!-- Stats Overview: each card links to the list it summarises -->
+  <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <a href="/admin-panel/movies/" class="group block rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 p-6 transition hover:border-blue-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-400">Total Movies</p>
+          <p class="mt-2 text-3xl font-bold">{{ total_movies }}</p>
+          <p class="mt-1 text-xs text-gray-500">{{ published_movies }} published</p>
+        </div>
+        <div class="rounded-full bg-blue-500/20 p-3">
+          <svg class="h-6 w-6 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 3l4 4M8 3l-4 4"/></svg>
+        </div>
+      </div>
+      <p class="mt-3 text-xs text-blue-400 group-hover:underline">Manage movies →</p>
+    </a>
+
+    <a href="/admin-panel/series/" class="group block rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 p-6 transition hover:border-purple-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-400">Total Series</p>
+          <p class="mt-2 text-3xl font-bold">{{ total_series }}</p>
+          <p class="mt-1 text-xs text-gray-500">{{ published_series }} published</p>
+        </div>
+        <div class="rounded-full bg-purple-500/20 p-3">
+          <svg class="h-6 w-6 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 4v16M17 4v16M3 8h18M3 12h18M3 16h18"/></svg>
+        </div>
+      </div>
+      <p class="mt-3 text-xs text-purple-400 group-hover:underline">Manage series →</p>
+    </a>
+
+    <a href="/admin-panel/moderation/" class="group block rounded-lg bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20 p-6 transition hover:border-orange-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-400">Pending Reviews</p>
+          <p class="mt-2 text-3xl font-bold">{{ pending_reviews }}</p>
+          <p class="mt-1 text-xs text-gray-500">awaiting approval</p>
+        </div>
+        <div class="rounded-full bg-orange-500/20 p-3">
+          <svg class="h-6 w-6 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </div>
+      </div>
+      <p class="mt-3 text-xs text-orange-400 group-hover:underline">Moderate →</p>
+    </a>
+
+    <a href="/admin-panel/moderation/" class="group block rounded-lg bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 p-6 transition hover:border-green-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-400">Pending Comments</p>
+          <p class="mt-2 text-3xl font-bold">{{ pending_comments }}</p>
+          <p class="mt-1 text-xs text-gray-500">awaiting approval</p>
+        </div>
+        <div class="rounded-full bg-green-500/20 p-3">
+          <svg class="h-6 w-6 text-green-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+        </div>
+      </div>
+      <p class="mt-3 text-xs text-green-400 group-hover:underline">Moderate →</p>
+    </a>
+  </div>
+
+  <div class="mt-8 grid gap-6 lg:grid-cols-2">
+    <!-- Quick Actions -->
+    <div class="rounded-lg bg-card p-6">
+      <h2 class="text-xl font-bold">Quick Actions</h2>
+      <div class="mt-4 grid gap-3">
+        <a href="/admin-panel/movies/new/" class="flex items-center gap-3 rounded-lg border border-white/10 p-4 hover:bg-white/5">
+          <div class="rounded-full bg-accent/20 p-2">
+            <svg class="h-5 w-5 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold">Add New Movie</p>
+            <p class="text-xs text-gray-400">Create a new movie entry</p>
+          </div>
+        </a>
+        <a href="/admin-panel/series/new/" class="flex items-center gap-3 rounded-lg border border-white/10 p-4 hover:bg-white/5">
+          <div class="rounded-full bg-accent/20 p-2">
+            <svg class="h-5 w-5 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold">Add New Series</p>
+            <p class="text-xs text-gray-400">Create a new series entry</p>
+          </div>
+        </a>
+        <a href="/admin-panel/moderation/" class="flex items-center gap-3 rounded-lg border border-white/10 p-4 hover:bg-white/5">
+          <div class="rounded-full bg-orange-500/20 p-2">
+            <svg class="h-5 w-5 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold">Moderate Content</p>
+            <p class="text-xs text-gray-400">Review pending reviews & comments</p>
+          </div>
+        </a>
+        <a href="/admin-panel/analytics/" class="flex items-center gap-3 rounded-lg border border-white/10 p-4 hover:bg-white/5">
+          <div class="rounded-full bg-cyan-500/20 p-2">
+            <svg class="h-5 w-5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold">Analytics</p>
+            <p class="text-xs text-gray-400">Views, top content, CSV export</p>
+          </div>
+        </a>
+        <a href="/admin-panel/taxonomies/" class="flex items-center gap-3 rounded-lg border border-white/10 p-4 hover:bg-white/5">
+          <div class="rounded-full bg-purple-500/20 p-2">
+            <svg class="h-5 w-5 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold">Manage Taxonomies</p>
+            <p class="text-xs text-gray-400">Genres, categories, languages</p>
+          </div>
+        </a>
+        <a href="/admin-panel/users/" class="flex items-center gap-3 rounded-lg border border-white/10 p-4 hover:bg-white/5">
+          <div class="rounded-full bg-green-500/20 p-2">
+            <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-4.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold">Manage Users</p>
+            <p class="text-xs text-gray-400">Roles, bans and access</p>
+          </div>
+        </a>
+        {% if admin.role == 'super_admin' %}
+        <a href="/admin-panel/audit/" class="flex items-center gap-3 rounded-lg border border-white/10 p-4 hover:bg-white/5">
+          <div class="rounded-full bg-blue-500/20 p-2">
+            <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold">Audit Log</p>
+            <p class="text-xs text-gray-400">Who changed what</p>
+          </div>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent Movies -->
+    <div class="rounded-lg bg-card p-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold">Recent Movies</h2>
+        <a href="/admin-panel/movies/" class="text-sm text-accent hover:underline">View all</a>
+      </div>
+      {% if recent_movies %}
+      <div class="mt-4 space-y-3">
+        {% for movie in recent_movies %}
+        <a href="/admin-panel/movies/{{ movie.id }}/edit/" class="flex items-center gap-3 rounded-lg border border-white/10 p-3 hover:bg-white/5">
+          {% if movie.poster_path %}
+          <img src="/{{ movie.poster_path }}" alt="{{ movie.title }}" class="h-16 w-12 rounded object-cover">
+          {% else %}
+          <div class="flex h-16 w-12 items-center justify-center rounded bg-surface text-xs text-gray-600">No poster</div>
+          {% endif %}
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold truncate">{{ movie.title }}</p>
+            <p class="text-xs text-gray-400">{{ movie.release_year or "—" }} • {{ movie.status.title() }}</p>
+          </div>
+          <span class="text-xs rounded-full px-2 py-1 {% if movie.status == 'published' %}bg-green-500/20 text-green-400{% else %}bg-yellow-500/20 text-yellow-400{% endif %}">{{ movie.status }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="mt-4 text-sm text-gray-400">No movies yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Recent Series -->
+    <div class="rounded-lg bg-card p-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold">Recent Series</h2>
+        <a href="/admin-panel/series/" class="text-sm text-accent hover:underline">View all</a>
+      </div>
+      {% if recent_series %}
+      <div class="mt-4 space-y-3">
+        {% for s in recent_series %}
+        <a href="/admin-panel/series/{{ s.id }}/edit/" class="flex items-center gap-3 rounded-lg border border-white/10 p-3 hover:bg-white/5">
+          {% if s.poster_path %}
+          <img src="/{{ s.poster_path }}" alt="{{ s.title }}" class="h-16 w-12 rounded object-cover">
+          {% else %}
+          <div class="flex h-16 w-12 items-center justify-center rounded bg-surface text-xs text-gray-600">No poster</div>
+          {% endif %}
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold truncate">{{ s.title }}</p>
+            <p class="text-xs text-gray-400">{{ s.release_year or "—" }} • {{ s.status.title() }}</p>
+          </div>
+          <span class="text-xs rounded-full px-2 py-1 {% if s.status == 'published' %}bg-green-500/20 text-green-400{% else %}bg-yellow-500/20 text-yellow-400{% endif %}">{{ s.status }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="mt-4 text-sm text-gray-400">No series yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if recent_reviews %}
+  <div class="mt-6 rounded-lg bg-card p-6">
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-bold">Pending Reviews</h2>
+      <a href="/admin-panel/moderation/" class="text-sm text-accent hover:underline">Moderate all</a>
+    </div>
+    <div class="mt-4 space-y-3">
+      {% for review in recent_reviews %}
+      <div class="rounded-lg border border-white/10 p-4">
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <p class="font-semibold">{{ review.title }}</p>
+            <p class="mt-1 text-sm text-gray-300 line-clamp-2">{{ review.content }}</p>
+            <p class="mt-2 text-xs text-gray-500">{{ review.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+          </div>
+          <span class="ml-4 flex items-center gap-1 text-accent">
+            <svg class="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+            {{ review.rating }}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+<style>
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+</style>
+{% endblock %}

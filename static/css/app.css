@@ -1,0 +1,9 @@
+/* Global overrides only. Layout and colour come from Tailwind utility classes in templates. */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide the native disclosure marker on the mobile menu. */
+details > summary::-webkit-details-marker {
+  display: none;
+}

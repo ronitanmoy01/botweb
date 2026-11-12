@@ -1,0 +1,16 @@
+# VCS and local env
+.git
+.env
+
+# Python caches and virtualenvs
+__pycache__
+*.pyc
+.venv
+
+# Local data — never bake into the image
+moviehub.db
+uploads/
+*.log
+
+# The IMDb scraper is not part of the running site
+imdb-v2.py

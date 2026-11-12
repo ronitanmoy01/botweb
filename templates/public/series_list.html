@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-7xl px-4 py-12">
+  <h1 class="text-3xl font-bold">TV Series</h1>
+
+  {% if series %}
+  <div class="mt-8 grid justify-start gap-4 grid-cols-[repeat(auto-fill,10rem)]">
+    {% for s in series %}
+    <a href="/series/{{ s.slug }}/" class="group relative block transform transition-transform hover:scale-105">
+      <div class="overflow-hidden rounded-lg shadow-lg">
+        {% if s.poster_path %}
+        <img src="/{{ s.poster_path }}" alt="{{ s.title }}" class="aspect-[2/3] w-full object-cover">
+        {% else %}
+        <div class="flex aspect-[2/3] w-full items-center justify-center bg-card text-xs text-gray-600">No poster</div>
+        {% endif %}
+      </div>
+      {% if s.rating %}
+      <div class="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-full bg-black/90 px-1.5 py-0.5 text-xs font-semibold text-accent backdrop-blur-sm">
+        <svg class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+        {{ "%.1f"|format(s.rating) }}
+      </div>
+      {% endif %}
+      <h3 class="mt-1.5 text-sm font-semibold leading-tight group-hover:text-accent line-clamp-2">{{ s.title }}</h3>
+      {% if s.release_year %}<p class="text-xs text-gray-400">{{ s.release_year }}</p>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="mt-8 text-gray-400">No series available yet.</p>
+  {% endif %}
+</section>
+
+<style>
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+</style>
+{% endblock %}

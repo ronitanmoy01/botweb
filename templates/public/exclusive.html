@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-7xl px-4 py-12">
+  <h1 class="text-3xl font-bold">Exclusive Content</h1>
+
+  {% if movies or series %}
+    {% if movies %}
+    <div class="mt-8">
+      <h2 class="text-2xl font-bold">Movies</h2>
+      <div class="mt-6 grid justify-start gap-4 grid-cols-[repeat(auto-fill,10rem)]">
+        {% for movie in movies %}
+        <a href="/movie/{{ movie.slug }}/" class="group block">
+          <div class="overflow-hidden rounded-lg bg-card">
+            {% if movie.poster_path %}
+            <img src="/{{ movie.poster_path }}" alt="{{ movie.title }}" class="aspect-[2/3] w-full object-cover group-hover:opacity-75">
+            {% else %}
+            <div class="flex aspect-[2/3] w-full items-center justify-center bg-card text-gray-600">No poster</div>
+            {% endif %}
+          </div>
+          <h3 class="mt-2 font-semibold group-hover:text-accent">{{ movie.title }}</h3>
+          {% if movie.release_year %}
+          <p class="text-sm text-gray-400">{{ movie.release_year }}</p>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if series %}
+    <div class="mt-12">
+      <h2 class="text-2xl font-bold">TV Series</h2>
+      <div class="mt-6 grid justify-start gap-4 grid-cols-[repeat(auto-fill,10rem)]">
+        {% for s in series %}
+        <a href="/series/{{ s.slug }}/" class="group block">
+          <div class="overflow-hidden rounded-lg bg-card">
+            {% if s.poster_path %}
+            <img src="/{{ s.poster_path }}" alt="{{ s.title }}" class="aspect-[2/3] w-full object-cover group-hover:opacity-75">
+            {% else %}
+            <div class="flex aspect-[2/3] w-full items-center justify-center bg-card text-gray-600">No poster</div>
+            {% endif %}
+          </div>
+          <h3 class="mt-2 font-semibold group-hover:text-accent">{{ s.title }}</h3>
+          {% if s.release_year %}
+          <p class="text-sm text-gray-400">{{ s.release_year }}</p>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  {% else %}
+  <p class="mt-8 text-gray-400">No exclusive content yet.</p>
+  {% endif %}
+</section>
+{% endblock %}
