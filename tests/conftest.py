@@ -28,17 +28,22 @@ def _create_tables():
 
 @pytest.fixture(autouse=True)
 def _isolate_state():
-    """Every test starts with no users and no login lockouts."""
+    """Every test starts with no users, no login lockouts, and no catalog rows."""
     import asyncio
 
     from sqlalchemy import delete
 
     from app.core import security
     from app.core.database import SessionLocal, engine
+    from app.models.catalog import Movie, Series
     from app.models.user import User
 
     async def clear() -> None:
         async with SessionLocal() as session:
+            # Foreign keys cascade, so clearing movies/series clears junctions,
+            # favorites, reviews, watchlists, comments and seasons/episodes.
+            await session.execute(delete(Movie))
+            await session.execute(delete(Series))
             await session.execute(delete(User))
             await session.commit()
         await engine.dispose()

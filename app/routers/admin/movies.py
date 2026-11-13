@@ -171,6 +171,8 @@ async def movie_create(
     if not title.strip():
         errors.append("Title is required")
     year, runtime, score = _numbers(release_year, runtime_minutes, rating, errors)
+    if trailer_url.strip() and not safe_url(trailer_url):
+        errors.append("Trailer URL must be a valid http(s) link")
     poster_path = await _store_image(poster, errors)
     backdrop_path = await _store_image(backdrop, errors)
     if errors:
@@ -185,7 +187,7 @@ async def movie_create(
         runtime_minutes=runtime,
         rating=score,
         age_rating=age_rating.strip(),
-        trailer_url=trailer_url.strip() or None,
+        trailer_url=safe_url(trailer_url),
         short_description=short_description.strip(),
         description=description.strip(),
         poster_path=poster_path,
@@ -251,6 +253,8 @@ async def movie_update(
     if not title.strip():
         errors.append("Title is required")
     year, runtime, score = _numbers(release_year, runtime_minutes, rating, errors)
+    if trailer_url.strip() and not safe_url(trailer_url):
+        errors.append("Trailer URL must be a valid http(s) link")
     new_poster = await _store_image(poster, errors)
     new_backdrop = await _store_image(backdrop, errors)
     if errors:
@@ -268,7 +272,7 @@ async def movie_update(
     movie.runtime_minutes = runtime
     movie.rating = score
     movie.age_rating = age_rating.strip()
-    movie.trailer_url = trailer_url.strip() or None
+    movie.trailer_url = safe_url(trailer_url)
     movie.short_description = short_description.strip()
     movie.description = description.strip()
     movie.status = status

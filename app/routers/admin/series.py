@@ -113,6 +113,8 @@ async def series_create(
     errors: list[str] = []
     if not title.strip():
         errors.append("Title is required")
+    if trailer_url.strip() and not safe_url(trailer_url):
+        errors.append("Trailer URL must be a valid http(s) link")
     poster_path = await _save_image(poster, errors)
     backdrop_path = await _save_image(backdrop, errors)
     if errors:
@@ -137,7 +139,7 @@ async def series_create(
         release_year=release_year,
         rating=rating,
         age_rating=age_rating.strip(),
-        trailer_url=trailer_url.strip() or None,
+        trailer_url=safe_url(trailer_url),
         short_description=short_description.strip(),
         description=description.strip(),
         poster_path=poster_path,
@@ -207,6 +209,8 @@ async def series_update(
     errors: list[str] = []
     if not title.strip():
         errors.append("Title is required")
+    if trailer_url.strip() and not safe_url(trailer_url):
+        errors.append("Trailer URL must be a valid http(s) link")
     new_poster = await _save_image(poster, errors)
     new_backdrop = await _save_image(backdrop, errors)
     if errors:
@@ -234,7 +238,7 @@ async def series_update(
     series.release_year = release_year
     series.rating = rating
     series.age_rating = age_rating.strip()
-    series.trailer_url = trailer_url.strip() or None
+    series.trailer_url = safe_url(trailer_url)
     series.short_description = short_description.strip()
     series.description = description.strip()
     series.status = status
