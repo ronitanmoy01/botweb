@@ -7,6 +7,20 @@
     <a href="/admin-panel/movies/new/" class="rounded-full bg-accent px-4 py-2 text-sm font-semibold hover:opacity-90">Add movie</a>
   </div>
 
+  {% if flash_message %}
+  <div class="mt-4 rounded-lg bg-green-500/10 border border-green-500/20 px-4 py-3 text-green-400">{{ flash_message }}</div>
+  {% endif %}
+
+  <form method="post" action="/admin-panel/movies/import-imdb/" class="mb-8 rounded-lg border border-white/10 bg-card p-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="block text-sm font-semibold">Import from IMDb</label>
+    <p class="mt-1 text-xs text-gray-400">Paste an IMDb URL or tt-id (e.g. https://www.imdb.com/title/tt1375666/) — the title, poster and details are fetched automatically.</p>
+    <div class="mt-2 flex gap-2">
+      <input type="text" name="url" placeholder="https://www.imdb.com/title/tt1375666/" class="flex-1 rounded bg-surface px-3 py-2 text-sm" required>
+      <button type="submit" class="rounded-full bg-accent px-4 py-2 text-sm font-semibold hover:opacity-90">Import</button>
+    </div>
+  </form>
+
   {% if movies %}
   <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     {% for movie in movies %}

@@ -12,5 +12,3 @@ moviehub.db
 uploads/
 *.log
 
-# The IMDb scraper is not part of the running site
-imdb-v2.py

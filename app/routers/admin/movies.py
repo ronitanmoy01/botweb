@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from datetime import datetime, timezone
 
@@ -84,7 +85,53 @@ async def movies_list(
     session: AsyncSession = Depends(get_session),
 ) -> HTMLResponse:
     movies = (await session.scalars(select(Movie).order_by(Movie.created_at.desc()))).all()
-    return templates.TemplateResponse(request, "admin/movies_list.html", {"page_title": "Movies", "movies": movies})
+    return templates.TemplateResponse(
+        request,
+        "admin/movies_list.html",
+        {
+            "page_title": "Movies",
+            "movies": movies,
+            "flash_message": request.session.pop("flash_message", None),
+        },
+    )
+
+
+@router.post("/import-imdb/", response_model=None)
+async def import_imdb(
+    request: Request,
+    url: str = Form(""),
+    csrf_token: str = Form(""),
+    admin: User = Depends(require_roles(*ADMIN_ROLES)),
+    session: AsyncSession = Depends(get_session),
+):
+    """Fetch an IMDb title and save it as a published Movie/Series (auto-filled form)."""
+    check_csrf(request, csrf_token)
+    url = url.strip()
+    if not url:
+        request.session["flash_message"] = "Enter an IMDb URL or tt-id"
+        return RedirectResponse("/admin-panel/movies/", status_code=303)
+
+    # The v2 scraper lives at the repo root with a hyphenated filename; load it via importlib.
+    from app.scripts.import_imdb import load_v2, save_title
+
+    v2 = load_v2()
+    try:
+        data = await asyncio.to_thread(v2.get_title_details, url)
+    except Exception as exc:
+        request.session["flash_message"] = f"IMDb fetch failed: {exc}"
+        return RedirectResponse("/admin-panel/movies/", status_code=303)
+
+    try:
+        message = await save_title(session, data)
+    except Exception as exc:
+        await session.rollback()
+        request.session["flash_message"] = f"Save failed: {exc}"
+        return RedirectResponse("/admin-panel/movies/", status_code=303)
+
+    log_action(session, admin, "movie.import_imdb", target=str(data.get("title", url))[:255])
+    await session.commit()
+    request.session["flash_message"] = message
+    return RedirectResponse("/admin-panel/movies/", status_code=303)
 
 
 @router.get("/new/", response_class=HTMLResponse)
