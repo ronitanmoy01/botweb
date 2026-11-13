@@ -10,7 +10,7 @@
     <a href="/movie/{{ movie.slug }}/" class="group relative block transform transition-transform hover:scale-105">
       <div class="overflow-hidden rounded-lg shadow-lg">
         {% if movie.poster_path %}
-        <img src="/{{ movie.poster_path }}" alt="{{ movie.title }}" class="aspect-[2/3] w-full object-cover">
+        <img src="{{ movie.poster_path|poster_url }}" alt="{{ movie.title }}" class="aspect-[2/3] w-full object-cover">
         {% else %}
         <div class="flex aspect-[2/3] w-full items-center justify-center bg-card text-xs text-gray-600">No poster</div>
         {% endif %}
@@ -38,7 +38,7 @@
       <a href="/series/{{ s.slug }}/" class="group relative block transform transition-transform hover:scale-105">
         <div class="overflow-hidden rounded-lg shadow-lg">
           {% if s.poster_path %}
-          <img src="/{{ s.poster_path }}" alt="{{ s.title }}" class="aspect-[2/3] w-full object-cover">
+          <img src="{{ s.poster_path|poster_url }}" alt="{{ s.title }}" class="aspect-[2/3] w-full object-cover">
           {% else %}
           <div class="flex aspect-[2/3] w-full items-center justify-center bg-card text-xs text-gray-600">No poster</div>
           {% endif %}

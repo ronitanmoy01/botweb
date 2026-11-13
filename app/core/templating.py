@@ -17,6 +17,20 @@ def _page_context(request: Request) -> dict:
     }
 
 
+def _poster_url(path: str | None) -> str:
+    """Return the full poster URL (external or local).
+
+    Handles both direct IMDb URLs (https://...) and legacy local uploads
+    (uploads/...). Local paths get a leading slash; external URLs pass through.
+    """
+    if not path:
+        return ""
+    if path.startswith(("http://", "https://")):
+        return path
+    return f"/{path}" if not path.startswith("/") else path
+
+
 templates = Jinja2Templates(directory=BASE_DIR / "templates", context_processors=[_page_context])
 templates.env.globals["site_name"] = get_settings().site_name
 templates.env.globals["current_year"] = lambda: datetime.now().year
+templates.env.filters["poster_url"] = _poster_url

@@ -13,7 +13,7 @@
         <a href="/movie/{{ movie.slug }}/" class="group block">
           <div class="overflow-hidden rounded-lg bg-card">
             {% if movie.poster_path %}
-            <img src="/{{ movie.poster_path }}" alt="{{ movie.title }}" class="aspect-[2/3] w-full object-cover group-hover:opacity-75">
+            <img src="{{ movie.poster_path|poster_url }}" alt="{{ movie.title }}" class="aspect-[2/3] w-full object-cover group-hover:opacity-75">
             {% else %}
             <div class="flex aspect-[2/3] w-full items-center justify-center bg-card text-gray-600">No poster</div>
             {% endif %}
@@ -36,7 +36,7 @@
         <a href="/series/{{ s.slug }}/" class="group block">
           <div class="overflow-hidden rounded-lg bg-card">
             {% if s.poster_path %}
-            <img src="/{{ s.poster_path }}" alt="{{ s.title }}" class="aspect-[2/3] w-full object-cover group-hover:opacity-75">
+            <img src="{{ s.poster_path|poster_url }}" alt="{{ s.title }}" class="aspect-[2/3] w-full object-cover group-hover:opacity-75">
             {% else %}
             <div class="flex aspect-[2/3] w-full items-center justify-center bg-card text-gray-600">No poster</div>
             {% endif %}

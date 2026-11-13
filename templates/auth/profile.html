@@ -91,7 +91,7 @@
           {% if fav.movie_id %}
           <a href="/movie/{{ fav.movie.slug }}/" class="flex items-center gap-3 rounded-lg border border-white/10 p-3 hover:bg-white/5">
             {% if fav.movie.poster_path %}
-            <img src="/{{ fav.movie.poster_path }}" alt="{{ fav.movie.title }}" class="h-20 w-14 rounded object-cover">
+            <img src="{{ fav.movie.poster_path|poster_url }}" alt="{{ fav.movie.title }}" class="h-20 w-14 rounded object-cover">
             {% else %}
             <div class="flex h-20 w-14 items-center justify-center rounded bg-surface text-xs text-gray-600">No poster</div>
             {% endif %}
@@ -109,7 +109,7 @@
           {% else %}
           <a href="/series/{{ fav.series.slug }}/" class="flex items-center gap-3 rounded-lg border border-white/10 p-3 hover:bg-white/5">
             {% if fav.series.poster_path %}
-            <img src="/{{ fav.series.poster_path }}" alt="{{ fav.series.title }}" class="h-20 w-14 rounded object-cover">
+            <img src="{{ fav.series.poster_path|poster_url }}" alt="{{ fav.series.title }}" class="h-20 w-14 rounded object-cover">
             {% else %}
             <div class="flex h-20 w-14 items-center justify-center rounded bg-surface text-xs text-gray-600">No poster</div>
             {% endif %}

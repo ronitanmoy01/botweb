@@ -10,7 +10,7 @@
       {% set kind = 'movie' if item.__class__.__name__ == 'Movie' else 'series' %}
       <a href="/{{ kind }}/{{ item.slug }}/" class="hero-slide {% if loop.first %}active{% endif %} absolute inset-0 transition-opacity duration-700 block" data-index="{{ loop.index0 }}" style="z-index: {% if loop.first %}10{% else %}1{% endif %}; pointer-events: {% if loop.first %}auto{% else %}none{% endif %}">
         {% if item.backdrop_path %}
-        <img src="/{{ item.backdrop_path }}" alt="{{ item.title }}" class="h-full w-full object-cover">
+        <img src="{{ item.backdrop_path|poster_url }}" alt="{{ item.title }}" class="h-full w-full object-cover">
         {% else %}
         <div class="h-full w-full bg-gradient-to-r from-accent/20 to-surface"></div>
         {% endif %}
@@ -56,7 +56,7 @@
       <a href="/{{ kind }}/{{ item.slug }}/" class="group relative block w-40 flex-shrink-0 transform transition-transform hover:scale-105">
         <div class="overflow-hidden rounded-lg shadow-lg">
           {% if item.poster_path %}
-          <img src="/{{ item.poster_path }}" alt="{{ item.title }}" class="aspect-[2/3] w-full object-cover">
+          <img src="{{ item.poster_path|poster_url }}" alt="{{ item.title }}" class="aspect-[2/3] w-full object-cover">
           {% else %}
           <div class="flex aspect-[2/3] w-full items-center justify-center bg-card text-xs text-gray-600">No poster</div>
           {% endif %}
@@ -89,7 +89,7 @@
       <a href="/movie/{{ movie.slug }}/" class="group relative block w-40 flex-shrink-0 transform transition-transform hover:scale-105">
         <div class="overflow-hidden rounded-lg shadow-lg">
           {% if movie.poster_path %}
-          <img src="/{{ movie.poster_path }}" alt="{{ movie.title }}" class="aspect-[2/3] w-full object-cover">
+          <img src="{{ movie.poster_path|poster_url }}" alt="{{ movie.title }}" class="aspect-[2/3] w-full object-cover">
           {% else %}
           <div class="flex aspect-[2/3] w-full items-center justify-center bg-card text-xs text-gray-600">No poster</div>
           {% endif %}
@@ -122,7 +122,7 @@
       <a href="/series/{{ series.slug }}/" class="group relative block w-40 flex-shrink-0 transform transition-transform hover:scale-105">
         <div class="overflow-hidden rounded-lg shadow-lg">
           {% if series.poster_path %}
-          <img src="/{{ series.poster_path }}" alt="{{ series.title }}" class="aspect-[2/3] w-full object-cover">
+          <img src="{{ series.poster_path|poster_url }}" alt="{{ series.title }}" class="aspect-[2/3] w-full object-cover">
           {% else %}
           <div class="flex aspect-[2/3] w-full items-center justify-center bg-card text-xs text-gray-600">No poster</div>
           {% endif %}

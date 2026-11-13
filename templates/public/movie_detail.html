@@ -8,7 +8,7 @@
   <div class="grid gap-8 lg:grid-cols-[300px_1fr]">
     <div>
       {% if movie.poster_path %}
-      <img src="/{{ movie.poster_path }}" alt="{{ movie.title }}" class="w-full rounded-lg shadow-lg">
+      <img src="{{ movie.poster_path|poster_url }}" alt="{{ movie.title }}" class="w-full rounded-lg shadow-lg">
       {% else %}
       <div class="flex aspect-[2/3] w-full items-center justify-center rounded-lg bg-card text-gray-600">No poster</div>
       {% endif %}

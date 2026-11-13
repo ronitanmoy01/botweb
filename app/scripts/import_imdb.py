@@ -118,25 +118,13 @@ def _derive_sized_poster(poster_url):
 
 
 def _download_image(url: str | None) -> str | None:
-    """Save an image into the uploads folder, the same place admin uploads go."""
-    url = _derive_sized_poster(url)
-    if not url:
-        return None
-    settings = get_settings()
-    try:
-        with urllib.request.urlopen(url, timeout=30) as resp:
-            content = resp.read(MAX_POSTER_BYTES + 1)
-    except OSError as exc:
-        print(f"  image download failed, saving without it: {exc}")
-        return None
-    if len(content) > MAX_POSTER_BYTES:
-        print("  image is too large, saving without it")
-        return None
-    settings.uploads_dir.mkdir(parents=True, exist_ok=True)
-    # shortcut: the extension is always .jpg, no content check, upgrade when non-JPEG images appear
-    name = f"{secrets.token_urlsafe(16)}.jpg"
-    (settings.uploads_dir / name).write_bytes(content)
-    return f"uploads/{name}"
+    """Return the low-res IMDb poster URL directly (no download).
+
+    Stores the direct IMDb link in poster_path so images work even when
+    uploads/ is lost (e.g. Docker container rebuild). Falls back to the
+    original URL if the resize pattern doesn't match.
+    """
+    return _derive_sized_poster(url)
 
 
 async def _tags(session, model, names: list[str], extras: list[str] = []) -> list:

@@ -153,7 +153,7 @@
         {% for movie in recent_movies %}
         <a href="/admin-panel/movies/{{ movie.id }}/edit/" class="flex items-center gap-3 rounded-lg border border-white/10 p-3 hover:bg-white/5">
           {% if movie.poster_path %}
-          <img src="/{{ movie.poster_path }}" alt="{{ movie.title }}" class="h-16 w-12 rounded object-cover">
+          <img src="{{ movie.poster_path|poster_url }}" alt="{{ movie.title }}" class="h-16 w-12 rounded object-cover">
           {% else %}
           <div class="flex h-16 w-12 items-center justify-center rounded bg-surface text-xs text-gray-600">No poster</div>
           {% endif %}
@@ -181,7 +181,7 @@
         {% for s in recent_series %}
         <a href="/admin-panel/series/{{ s.id }}/edit/" class="flex items-center gap-3 rounded-lg border border-white/10 p-3 hover:bg-white/5">
           {% if s.poster_path %}
-          <img src="/{{ s.poster_path }}" alt="{{ s.title }}" class="h-16 w-12 rounded object-cover">
+          <img src="{{ s.poster_path|poster_url }}" alt="{{ s.title }}" class="h-16 w-12 rounded object-cover">
           {% else %}
           <div class="flex h-16 w-12 items-center justify-center rounded bg-surface text-xs text-gray-600">No poster</div>
           {% endif %}
