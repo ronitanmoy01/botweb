@@ -84,16 +84,16 @@
       {% if series.directors or series.creators or series.writers or series.actors %}
       <div class="mt-6 space-y-2 text-sm">
         {% if series.directors %}
-        <div><span class="text-gray-400">Director:</span> <span class="text-gray-200">{{ series.directors }}</span></div>
+        <div><span class="text-gray-400">Director:</span> <span class="text-gray-200">{{ series.directors|person_links|safe }}</span></div>
         {% endif %}
         {% if series.creators %}
-        <div><span class="text-gray-400">Creator:</span> <span class="text-gray-200">{{ series.creators }}</span></div>
+        <div><span class="text-gray-400">Creator:</span> <span class="text-gray-200">{{ series.creators|person_links|safe }}</span></div>
         {% endif %}
         {% if series.writers %}
-        <div><span class="text-gray-400">Writers:</span> <span class="text-gray-200">{{ series.writers }}</span></div>
+        <div><span class="text-gray-400">Writers:</span> <span class="text-gray-200">{{ series.writers|person_links|safe }}</span></div>
         {% endif %}
         {% if series.actors %}
-        <div><span class="text-gray-400">Stars:</span> <span class="text-gray-200">{{ series.actors }}</span></div>
+        <div><span class="text-gray-400">Stars:</span> <span class="text-gray-200">{{ series.actors|person_links|safe }}</span></div>
         {% endif %}
       </div>
       {% endif %}

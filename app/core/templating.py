@@ -30,7 +30,22 @@ def _poster_url(path: str | None) -> str:
     return f"/{path}" if not path.startswith("/") else path
 
 
+def _person_links(names: str) -> str:
+    """Convert comma-separated names to clickable links.
+
+    Input: "Bong Joon Ho, Han Jin-won"
+    Output: '<a href="/person/bong-joon-ho/">Bong Joon Ho</a>, <a href="/person/han-jin-won/">Han Jin-won</a>'
+    """
+    from app.services.media import slugify
+    if not names or not names.strip():
+        return ""
+    parts = [n.strip() for n in names.split(",") if n.strip()]
+    links = [f'<a href="/person/{slugify(n)}/" class="text-accent hover:underline">{n}</a>' for n in parts]
+    return ", ".join(links)
+
+
 templates = Jinja2Templates(directory=BASE_DIR / "templates", context_processors=[_page_context])
 templates.env.globals["site_name"] = get_settings().site_name
 templates.env.globals["current_year"] = lambda: datetime.now().year
 templates.env.filters["poster_url"] = _poster_url
+templates.env.filters["person_links"] = _person_links

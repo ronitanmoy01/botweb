@@ -88,13 +88,13 @@
       {% if movie.directors or movie.writers or movie.actors %}
       <div class="mt-6 space-y-2 text-sm">
         {% if movie.directors %}
-        <div><span class="text-gray-400">Director:</span> <span class="text-gray-200">{{ movie.directors }}</span></div>
+        <div><span class="text-gray-400">Director:</span> <span class="text-gray-200">{{ movie.directors|person_links|safe }}</span></div>
         {% endif %}
         {% if movie.writers %}
-        <div><span class="text-gray-400">Writers:</span> <span class="text-gray-200">{{ movie.writers }}</span></div>
+        <div><span class="text-gray-400">Writers:</span> <span class="text-gray-200">{{ movie.writers|person_links|safe }}</span></div>
         {% endif %}
         {% if movie.actors %}
-        <div><span class="text-gray-400">Stars:</span> <span class="text-gray-200">{{ movie.actors }}</span></div>
+        <div><span class="text-gray-400">Stars:</span> <span class="text-gray-200">{{ movie.actors|person_links|safe }}</span></div>
         {% endif %}
       </div>
       {% endif %}

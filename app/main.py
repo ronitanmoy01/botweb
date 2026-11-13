@@ -9,7 +9,7 @@ from app.routers import health, seo
 from app.routers.admin import analytics as admin_analytics, audit as admin_audit, dashboard, moderation, movies as admin_movies, series as admin_series, taxonomies as admin_taxonomies, users as admin_users
 from app.routers.auth import accounts, profile
 from app.routers.member import features as member_features, social as member_social
-from app.routers.public import catalog, home
+from app.routers.public import catalog, home, person
 
 SESSION_MAX_AGE_SECONDS = 14 * 24 * 60 * 60
 
@@ -55,6 +55,7 @@ def create_app() -> FastAPI:
         app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
     app.include_router(home.router)
     app.include_router(catalog.router)
+    app.include_router(person.router)
     app.include_router(seo.router)
     app.include_router(health.router)
     app.include_router(accounts.router)
