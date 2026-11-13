@@ -14,6 +14,7 @@ import argparse
 import asyncio
 import html
 import importlib.util
+import re
 import secrets
 import sys
 import urllib.request
@@ -94,8 +95,31 @@ def _truncate(text: str, limit: int) -> str:
     return text[:limit].rsplit(" ", 1)[0]
 
 
+def _derive_sized_poster(poster_url):
+    """Convert a full-size IMDb poster URL to the small 380x562 crop for low-res thumbnails."""
+    if not poster_url:
+        return None
+
+    if re.search(r"_V1_\.jpg$", poster_url):
+        return re.sub(
+            r"_V1_\.jpg$",
+            "_V1_QL75_UY562_CR2,0,380,562_.jpg",
+            poster_url,
+        )
+
+    if re.search(r"_V1_[^/]*\.jpg$", poster_url):
+        return re.sub(
+            r"_V1_[^/]*\.jpg$",
+            "_V1_QL75_UY562_CR2,0,380,562_.jpg",
+            poster_url,
+        )
+
+    return poster_url
+
+
 def _download_image(url: str | None) -> str | None:
     """Save an image into the uploads folder, the same place admin uploads go."""
+    url = _derive_sized_poster(url)
     if not url:
         return None
     settings = get_settings()
