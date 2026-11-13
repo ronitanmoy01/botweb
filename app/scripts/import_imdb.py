@@ -28,6 +28,9 @@ from app.models.catalog import Country, Genre, Language, Movie, MovieStatus, Ser
 from app.services.media import slugify, unique_slug
 
 V2_PATH = Path(__file__).resolve().parent.parent.parent / "imdb-v2.py"
+# Scraped posters come from IMDb, not from a user upload — cap them independently of
+# max_upload_bytes (that limit is for form uploads, and IMDb posters routinely exceed it).
+MAX_POSTER_BYTES = 10 * 1024 * 1024
 
 
 def load_v2():
@@ -98,11 +101,11 @@ def _download_image(url: str | None) -> str | None:
     settings = get_settings()
     try:
         with urllib.request.urlopen(url, timeout=30) as resp:
-            content = resp.read(settings.max_upload_bytes + 1)
+            content = resp.read(MAX_POSTER_BYTES + 1)
     except OSError as exc:
         print(f"  image download failed, saving without it: {exc}")
         return None
-    if len(content) > settings.max_upload_bytes:
+    if len(content) > MAX_POSTER_BYTES:
         print("  image is too large, saving without it")
         return None
     settings.uploads_dir.mkdir(parents=True, exist_ok=True)
