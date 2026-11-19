@@ -13,7 +13,7 @@
             <div class="flex aspect-[2/3] w-full items-center justify-center bg-card text-gray-600">No poster</div>
             {% endif %}
           </div>
-          <h3 class="mt-2 font-semibold group-hover:text-accent">{{ movie.title }}</h3>
+          <p class="mt-2 font-semibold group-hover:text-accent">{{ movie.title }}</p>
           {% if movie.release_year %}
           <p class="text-sm text-gray-400">{{ movie.release_year }}</p>
           {% endif %}
@@ -36,7 +36,7 @@
             <div class="flex aspect-[2/3] w-full items-center justify-center bg-card text-gray-600">No poster</div>
             {% endif %}
           </div>
-          <h3 class="mt-2 font-semibold group-hover:text-accent">{{ s.title }}</h3>
+          <p class="mt-2 font-semibold group-hover:text-accent">{{ s.title }}</p>
           {% if s.release_year %}
           <p class="text-sm text-gray-400">{{ s.release_year }}</p>
           {% endif %}

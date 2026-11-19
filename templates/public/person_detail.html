@@ -23,7 +23,7 @@
           {{ "%.1f"|format(movie.rating) }}
         </div>
         {% endif %}
-        <h3 class="mt-1.5 text-sm font-semibold leading-tight group-hover:text-accent line-clamp-2">{{ movie.title }}</h3>
+        <p class="mt-1.5 text-sm font-semibold leading-tight group-hover:text-accent line-clamp-2">{{ movie.title }}</p>
         {% if movie.release_year %}<p class="text-xs text-gray-400">{{ movie.release_year }}</p>{% endif %}
       </a>
       {% endfor %}
@@ -50,7 +50,7 @@
           {{ "%.1f"|format(s.rating) }}
         </div>
         {% endif %}
-        <h3 class="mt-1.5 text-sm font-semibold leading-tight group-hover:text-accent line-clamp-2">{{ s.title }}</h3>
+        <p class="mt-1.5 text-sm font-semibold leading-tight group-hover:text-accent line-clamp-2">{{ s.title }}</p>
         {% if s.release_year %}<p class="text-xs text-gray-400">{{ s.release_year }}</p>{% endif %}
       </a>
       {% endfor %}

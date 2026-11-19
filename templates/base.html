@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ page_title ~ " · " if page_title }}{{ site_name }}{% endblock %}</title>
-  <meta name="description" content="{% block description %}{{ site_name }}{% endblock %}">
+  <meta name="description" content="{% block description %}{{ meta_description(page_title|default(''), movie|default(None), series|default(None), heading|default('')) }}{% endblock %}">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {

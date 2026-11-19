@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+<h1 class="sr-only">{{ site_name }} — Watch movies and TV series</h1>
 <!-- Hero Slider -->
 {% if featured %}
 <section class="relative overflow-hidden bg-gradient-to-b from-surface to-background">
@@ -67,7 +68,7 @@
           {{ "%.1f"|format(item.rating) }}
         </div>
         {% endif %}
-        <h3 class="mt-1.5 text-sm font-semibold leading-tight group-hover:text-accent line-clamp-2">{{ item.title }}</h3>
+        <p class="mt-1.5 text-sm font-semibold leading-tight group-hover:text-accent line-clamp-2">{{ item.title }}</p>
         {% if item.release_year %}<p class="text-xs text-gray-400">{{ item.release_year }}</p>{% endif %}
       </a>
       {% endfor %}
@@ -100,7 +101,7 @@
           {{ "%.1f"|format(movie.rating) }}
         </div>
         {% endif %}
-        <h3 class="mt-1.5 text-sm font-semibold leading-tight group-hover:text-accent line-clamp-2">{{ movie.title }}</h3>
+        <p class="mt-1.5 text-sm font-semibold leading-tight group-hover:text-accent line-clamp-2">{{ movie.title }}</p>
         {% if movie.release_year %}<p class="text-xs text-gray-400">{{ movie.release_year }}</p>{% endif %}
       </a>
       {% endfor %}
@@ -133,7 +134,7 @@
           {{ "%.1f"|format(series.rating) }}
         </div>
         {% endif %}
-        <h3 class="mt-1.5 text-sm font-semibold leading-tight group-hover:text-accent line-clamp-2">{{ series.title }}</h3>
+        <p class="mt-1.5 text-sm font-semibold leading-tight group-hover:text-accent line-clamp-2">{{ series.title }}</p>
         {% if series.release_year %}<p class="text-xs text-gray-400">{{ series.release_year }}</p>{% endif %}
       </a>
       {% endfor %}
