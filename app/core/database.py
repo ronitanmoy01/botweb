@@ -36,7 +36,8 @@ def get_database_url() -> str:
 
 _url = get_database_url()
 # shortcut: SQLite uses NullPool (no pooled connections across event loops), PostgreSQL uses a pool; revisit if SQLite serves real traffic
-engine = create_async_engine(_url, **({"poolclass": NullPool} if _url.startswith("sqlite") else {"pool_pre_ping": True}))
+_engine_kwargs = {"poolclass": NullPool} if _url.startswith("sqlite") else {"pool_pre_ping": True, "connect_args": {"ssl": "require"}}
+engine = create_async_engine(_url, **_engine_kwargs)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
