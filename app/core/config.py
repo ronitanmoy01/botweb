@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     mail_enabled: bool = False
     mail_from_name: str = "MovieHub"
     mail_from_address: str = ""
+    support_email: str = ""
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     smtp_username: str = ""
@@ -57,6 +58,10 @@ class Settings(BaseSettings):
     def _require_real_secret_in_production(self) -> "Settings":
         if self.environment == "production" and self.secret_key == DEV_SECRET_KEY:
             raise ValueError("MOVIEHUB_SECRET_KEY must be set when MOVIEHUB_ENVIRONMENT=production")
+        # The Help page support address falls back to the mail-from address so a
+        # site needs only one configured mailbox.
+        if not self.support_email:
+            self.support_email = self.mail_from_address
         return self
 
 

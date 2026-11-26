@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-3xl px-4 py-12">
+  <h1 class="text-3xl font-bold">Help Center</h1>
+  <p class="mt-2 mb-8 text-gray-400">Frequently asked questions about how the site works.</p>
+
+  <div class="space-y-3">
+    {% for q, a in faq %}
+    <details class="group rounded-lg border border-white/10 bg-card p-5">
+      <summary class="cursor-pointer font-semibold text-gray-100 list-none">{{ q }}
+        <span class="ml-2 text-gray-500 group-open:hidden">+</span>
+        <span class="ml-2 text-gray-500 hidden group-open:inline">&minus;</span>
+      </summary>
+      <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-300">{{ a }}</p>
+    </details>
+    {% endfor %}
+  </div>
+
+  <div class="mt-8 rounded-lg border border-white/10 bg-card p-5">
+    <h2 class="font-semibold">Still need help?</h2>
+    <p class="mt-2 text-sm text-gray-400">Something not working? Reach out to the team — we read every message.</p>
+    {% if support_email %}
+    <a href="mailto:{{ support_email }}" class="mt-3 inline-block rounded bg-accent/20 px-4 py-2 text-sm font-semibold text-accent hover:bg-accent/30">Email support</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

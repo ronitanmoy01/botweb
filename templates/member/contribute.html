@@ -4,7 +4,7 @@
 <section class="mx-auto max-w-2xl px-4 py-8">
   <h1 class="mb-2 text-3xl font-bold">Contribute</h1>
   <p class="mb-6 text-sm text-gray-400">
-    Add a movie or series from IMDb with watch links. {% if instant %}Your uploads publish instantly.{% else %}Submissions go to admin review.{% endif %}
+    Add a movie or series from IMDb with downloads links. {% if instant %}Your uploads publish instantly.{% else %}Submissions go to admin review.{% endif %}
   </p>
   {% include "components/form_errors.html" %}
   <form method="post" action="/contribute/" class="space-y-4">
@@ -26,7 +26,7 @@
     </label>
 
     <div class="rounded-lg border border-white/10 bg-card/50 p-4">
-      <p class="mb-3 text-sm font-semibold text-gray-300">Watch links (min {{ min_links }})</p>
+      <p class="mb-3 text-sm font-semibold text-gray-300">Downloads links (min {{ min_links }})</p>
       <p class="mb-4 text-xs text-gray-500">One per line. The IMDb link is added automatically.</p>
 
       <label class="block mb-3">

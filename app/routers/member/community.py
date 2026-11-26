@@ -177,7 +177,7 @@ def _link_rows(raw_labels: str, raw_urls: str) -> list[tuple[str, str]]:
 async def contribute_form(
     request: Request, user: User | None = Depends(get_current_user), session: AsyncSession = Depends(get_session)
 ) -> HTMLResponse:
-    """The one upload path for movies and series, with their watch links."""
+    """The one upload path for movies and series, with their downloads links."""
     if user is None:
         return RedirectResponse("/login/", status_code=303)
     return _render(
@@ -199,7 +199,7 @@ async def submit_contribution(
     user: User | None = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    """Submit a movie or series with its watch links.
+    """Submit a movie or series with its downloads links.
 
     Staff and auto-approve users publish straight away; everyone else creates a
     draft that an admin publishes from the vault queue. The title, year, poster,

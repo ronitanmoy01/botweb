@@ -1,6 +1,6 @@
 """Admin: the secure vault moderation queue.
 
-Members post watch links; every link waits here until a human approves it.
+Members post downloads links; every link waits here until a human approves it.
 Approving credits the poster's points exactly once (the ledger's idempotency
 key is the link id) and publishes the title if it was uploaded as a draft.
 """
