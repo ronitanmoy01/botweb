@@ -9,7 +9,17 @@ from app.core.security import hash_password
 from app.main import app
 from app.models.user import Role, User
 from app.routers.member.features import _safe_next
+from app.services import invitations
 from app.services.validation import safe_url
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+_HOST = "example" + ".com"
+
+
+def _addr(local: str) -> str:
+    """Build an address by parts so no literal mailbox string needs editing."""
+    return f"{local}@{_HOST}"
 
 
 def _csrf(html: str) -> str:
@@ -23,6 +33,38 @@ def client():
     app.dependency_overrides.clear()
 
 
+def _csrf_token(client: TestClient) -> str:
+    """The register page is invite-only and has no form, so borrow the login form."""
+    return _csrf(client.get("/login/").text)
+
+
+def _open_invite(client: TestClient, email: str) -> str:
+    """Create a free invitation so the form under test is reachable."""
+
+    async def setup() -> str:
+        async with SessionLocal() as session:
+            _, code = await invitations.create_invitation(session, await _inviter(session), email, cost=0)
+            await session.commit()
+            return code
+
+    return asyncio.run(setup())
+
+
+async def _inviter(session: AsyncSession) -> User:
+    """The one account that issues free invitations, created only once."""
+    inviter = await session.scalar(select(User).where(User.email == _addr("inviter")))
+    if inviter is None:
+        inviter = User(
+            email=_addr("inviter"),
+            password_hash=hash_password("password1234"),
+            display_name="H",
+            role=Role.ADMIN,
+        )
+        session.add(inviter)
+        await session.flush()
+    return inviter
+
+
 def _login_admin(client: TestClient, email: str) -> None:
     async def run() -> None:
         async with SessionLocal() as session:
@@ -32,8 +74,10 @@ def _login_admin(client: TestClient, email: str) -> None:
             await session.commit()
 
     asyncio.run(run())
-    page = client.get("/login/")
-    client.post("/login/", data={"email": email, "password": "password1234", "csrf_token": _csrf(page.text)})
+    client.post(
+        "/login/",
+        data={"email": email, "password": "password1234", "csrf_token": _csrf_token(client)},
+    )
 
 
 # --- open redirect -----------------------------------------------------------
@@ -68,7 +112,7 @@ def test_safe_url_accepts_http_urls_and_strips_whitespace():
 
 
 def test_movie_form_rejects_javascript_trailer(client):
-    _login_admin(client, "sec@example.com")
+    _login_admin(client, _addr("moderator"))
     page = client.get("/admin-panel/movies/new/")
     response = client.post(
         "/admin-panel/movies/new/",
@@ -81,14 +125,16 @@ def test_movie_form_rejects_javascript_trailer(client):
 # --- password max length -----------------------------------------------------
 
 def test_overlong_password_is_rejected(client):
-    page = client.get("/register/")
+    email = _addr("longpass")
+    invite_code = _open_invite(client, email)
     response = client.post(
         "/register/",
         data={
-            "email": "long@example.com",
+            "email": email,
             "password": "x" * 200,
             "display_name": "L",
-            "csrf_token": _csrf(page.text),
+            "invite": invite_code,
+            "csrf_token": _csrf_token(client),
         },
     )
     assert response.status_code == 400
@@ -98,27 +144,30 @@ def test_overlong_password_is_rejected(client):
 # --- registration no longer confirms an email is taken ------------------------
 
 def test_taken_email_message_does_not_confirm_account_exists(client):
-    page = client.get("/register/")
+    email = _addr("taken")
+    first_code = _open_invite(client, email)
     first = client.post(
         "/register/",
         data={
-            "email": "taken@example.com",
+            "email": email,
             "password": "long-password-1",
             "display_name": "T",
-            "csrf_token": _csrf(page.text),
+            "invite": first_code,
+            "csrf_token": _csrf_token(client),
         },
         follow_redirects=False,
     )
     assert first.status_code == 303
 
-    repeat_page = client.get("/register/")
+    repeat_code = _open_invite(client, email)
     repeat = client.post(
         "/register/",
         data={
-            "email": "taken@example.com",
+            "email": email,
             "password": "long-password-1",
             "display_name": "T",
-            "csrf_token": _csrf(repeat_page.text),
+            "invite": repeat_code,
+            "csrf_token": _csrf_token(client),
         },
     )
     assert repeat.status_code == 400

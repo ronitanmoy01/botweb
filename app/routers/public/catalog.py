@@ -14,6 +14,7 @@ from app.models.user import ADMIN_ROLES, User
 from app.routers.member.social import social_context
 from app.services.admin_log import redirect_target
 from app.services.analytics import is_bot, today_salt, visitor_hash
+from app.services import vault
 
 router = APIRouter(include_in_schema=False)
 
@@ -99,6 +100,8 @@ async def movie_detail(
         "movie": movie,
         "view_count": view_count,
         "flash_message": request.session.pop("flash_message", None),
+        "vault_links": await vault.approved_with_adders(session, movie_id=movie.id),
+        "imdb_url": await vault.imdb_link_for(session, movie_id=movie.id),
         **await social_context(session, user, "movie", movie),
     }
     return templates.TemplateResponse(request, "public/movie_detail.html", context)
@@ -153,6 +156,8 @@ async def series_detail(
         "series": series,
         "view_count": view_count,
         "flash_message": request.session.pop("flash_message", None),
+        "vault_links": await vault.approved_with_adders(session, series_id=series.id),
+        "imdb_url": await vault.imdb_link_for(session, series_id=series.id),
         **await social_context(session, user, "series", series),
     }
     return templates.TemplateResponse(request, "public/series_detail.html", context)

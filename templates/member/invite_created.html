@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-2xl px-4 py-12">
+  <div class="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
+    <svg class="h-8 w-8 text-green-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+  </div>
+  <h1 class="mb-2 text-3xl font-bold">Invitation created</h1>
+  <p class="mb-6 text-gray-400">Send this link to <strong class="text-white">{{ invite_email }}</strong> before it expires:</p>
+
+  <div class="rounded-lg bg-card border border-white/10 p-6">
+    <label class="mb-2 block text-sm text-gray-400">Invite link</label>
+    <div class="flex gap-2">
+      <input readonly value="{{ invite_url }}" class="flex-1 rounded-lg bg-surface px-3 py-2 font-mono text-sm text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent">
+      <button onclick="navigator.clipboard.writeText(this.parentNode.firstElementChild.value)"
+              class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold hover:opacity-90">Copy</button>
+    </div>
+    <p class="mt-3 text-xs text-gray-500">
+      This link is shown only once. If you close this page without sharing it, revoke the invitation to get your
+      {{ invite_cost or 0 }} points back and create a new one.
+    </p>
+  </div>
+
+  <div class="mt-6 rounded-lg border border-white/10 p-5">
+    <p class="text-sm text-gray-300">
+      Your available points: <strong class="text-accent">{{ points_after }}</strong>.
+    </p>
+  </div>
+
+  <div class="mt-6 flex gap-3">
+    <a href="/my/invites/" class="rounded-lg bg-accent px-5 py-2 font-semibold hover:opacity-90">Back to invitations</a>
+    <a href="/profile/" class="rounded-lg border border-white/10 px-5 py-2 font-semibold hover:bg-white/5">My profile</a>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.txt" %}
+
+{% block body_txt %}
+Hello{% if display_name %}, {{ display_name }}{% endif %}!
+
+This is a test message from {{ site_name }}.
+If you can read this, the SMTP connection is working correctly.
+
+Sender: {{ from_address }}
+{% endblock %}

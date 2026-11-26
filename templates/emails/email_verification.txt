@@ -1,0 +1,13 @@
+{% extends "base.txt" %}
+
+{% block body_txt %}
+Hello{% if display_name %}, {{ display_name }}{% endif %},
+
+Thanks for joining {{ site_name }}. Please confirm that
+{{ recipient_email }} is yours so your account stays secure:
+
+  {{ verify_link }}
+
+This link expires on {{ expires_at }}. Until you verify, some account
+actions may be unavailable.
+{% endblock %}

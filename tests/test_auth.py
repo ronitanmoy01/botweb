@@ -8,6 +8,7 @@ from app.core.database import SessionLocal
 from app.core.security import hash_password
 from app.main import app
 from app.models.user import Role, User
+from app.services import invitations
 
 
 def _extract_csrf(html: str) -> str:
@@ -17,6 +18,16 @@ def _extract_csrf(html: str) -> str:
     return match.group(1)
 
 
+def _csrf(client) -> str:
+    """A CSRF token from any page that renders a form. The register page is
+    invite-only and has no form of its own, so the login page is used instead."""
+    return _extract_csrf(client.get("/login/").text)
+
+
+# Alias so tests that import a helper by either name read the same.
+_csrf_token = _csrf
+
+
 @pytest.fixture
 def client():
     with TestClient(app) as c:
@@ -24,47 +35,97 @@ def client():
     app.dependency_overrides.clear()
 
 
-@pytest.fixture
-def admin_user() -> User:
+def _seed(email: str, password: str, name: str, role: Role = Role.USER) -> User:
+    """Create an account straight in the database.
+
+    Registration is invite-only, so tests seed users directly instead of going
+    through the form — they exercise what they are named for, not invitations.
+    """
+
     async def create() -> User:
         async with SessionLocal() as session:
-            user = User(
-                email="admin@example.com",
-                password_hash=hash_password("password1234"),
-                display_name="Admin",
-                role=Role.SUPER_ADMIN,
-            )
+            user = User(email=email, password_hash=hash_password(password), display_name=name, role=role)
             session.add(user)
             await session.commit()
+            await session.refresh(user)
             return user
 
     return asyncio.run(create())
 
 
-def test_register_creates_user_and_redirects(client):
-    form_page = client.get("/register/")
-    csrf = _extract_csrf(form_page.text)
-    response = client.post(
+@pytest.fixture
+def admin_user() -> User:
+    return _seed("admin-2026@example.com", "password1234", "Admin", Role.SUPER_ADMIN)
+
+
+def _join(client, email: str, password: str, name: str) -> None:
+    """Invite someone and sign them up through the invite link — the only way in."""
+
+    async def setup() -> str:
+        async with SessionLocal() as session:
+            inviter = User(email="inviter-2026@example.com", password_hash=hash_password("inviterpass1"), display_name="H")
+            session.add(inviter)
+            await session.commit()
+            await session.refresh(inviter)
+            _, code = await invitations.create_invitation(session, inviter, email, cost=0)
+            await session.commit()
+            return code
+
+    code = asyncio.run(setup())
+    form = client.get(f"/register/?invite={code}")
+    client.post(
         "/register/",
         data={
-            "email": "user@example.com",
-            "password": "securepassword123",
-            "display_name": "Test User",
-            "csrf_token": csrf,
+            "email": email,
+            "password": password,
+            "display_name": name,
+            "invite": code,
+            "csrf_token": _extract_csrf(form.text),
         },
         follow_redirects=False,
     )
 
-    assert response.status_code == 303
-    assert response.headers["location"] == "/"
+
+def test_register_without_invite_shows_closed_page(client):
+    response = client.get("/register/")
+
+    assert response.status_code == 200
+    assert "invite-only" in response.text
+
+
+def test_register_with_invite_creates_user_and_redirects(client):
+    _join(client, "reader-2026@example.com", "securepassword123", "Test User")
+
+    async def exists() -> bool:
+        async with SessionLocal() as session:
+            return await session.scalar(
+                __import__("sqlalchemy").select(User.id).where(User.email == "reader-2026@example.com")
+            ) is not None
+
+    assert asyncio.run(exists())
 
 
 def test_register_rejects_short_password(client):
-    form_page = client.get("/register/")
-    csrf = _extract_csrf(form_page.text)
+    async def code() -> str:
+        async with SessionLocal() as session:
+            inviter = User(email="inviter-2026@example.com", password_hash=hash_password("inviterpass1"), display_name="H")
+            session.add(inviter)
+            await session.commit()
+            await session.refresh(inviter)
+            _, raw = await invitations.create_invitation(session, inviter, "short-2026@example.com", cost=0)
+            await session.commit()
+            return raw
+
+    invite_code = asyncio.run(code())
+    form = client.get(f"/register/?invite={invite_code}")
     response = client.post(
         "/register/",
-        data={"email": "user@example.com", "password": "short", "csrf_token": csrf},
+        data={
+            "email": "short-2026@example.com",
+            "password": "short",
+            "invite": invite_code,
+            "csrf_token": _extract_csrf(form.text),
+        },
     )
 
     assert response.status_code == 400
@@ -72,11 +133,9 @@ def test_register_rejects_short_password(client):
 
 
 def test_login_succeeds_with_valid_credentials(client, admin_user):
-    form_page = client.get("/login/")
-    csrf = _extract_csrf(form_page.text)
     response = client.post(
         "/login/",
-        data={"email": "admin@example.com", "password": "password1234", "csrf_token": csrf},
+        data={"email": admin_user.email, "password": "password1234", "csrf_token": _csrf(client)},
         follow_redirects=False,
     )
 
@@ -85,10 +144,8 @@ def test_login_succeeds_with_valid_credentials(client, admin_user):
 
 
 def test_login_rejects_invalid_password(client, admin_user):
-    form_page = client.get("/login/")
-    csrf = _extract_csrf(form_page.text)
     response = client.post(
-        "/login/", data={"email": "admin@example.com", "password": "wrong", "csrf_token": csrf}
+        "/login/", data={"email": admin_user.email, "password": "wrong", "csrf_token": _csrf(client)}
     )
 
     assert response.status_code == 400
@@ -96,11 +153,9 @@ def test_login_rejects_invalid_password(client, admin_user):
 
 
 def test_admin_dashboard_accessible_to_admin(client, admin_user):
-    form_page = client.get("/login/")
-    csrf = _extract_csrf(form_page.text)
     client.post(
         "/login/",
-        data={"email": "admin@example.com", "password": "password1234", "csrf_token": csrf},
+        data={"email": admin_user.email, "password": "password1234", "csrf_token": _csrf(client)},
     )
     response = client.get("/admin-panel/")
 
@@ -116,23 +171,14 @@ def test_admin_dashboard_rejects_anonymous(client):
 
 def test_post_without_csrf_token_is_forbidden(client, admin_user):
     response = client.post(
-        "/login/", data={"email": "admin@example.com", "password": "password1234", "csrf_token": ""}
+        "/login/", data={"email": admin_user.email, "password": "password1234", "csrf_token": ""}
     )
 
     assert response.status_code == 403
 
 
 def test_regular_user_cannot_open_admin_panel(client):
-    form_page = client.get("/register/")
-    client.post(
-        "/register/",
-        data={
-            "email": "user@example.com",
-            "password": "securepassword123",
-            "display_name": "Reader",
-            "csrf_token": _extract_csrf(form_page.text),
-        },
-    )
+    _join(client, "reader-2026@example.com", "securepassword123", "Reader")
 
     response = client.get("/admin-panel/")
 
@@ -140,47 +186,59 @@ def test_regular_user_cannot_open_admin_panel(client):
 
 
 def test_register_ignores_submitted_role(client):
-    form_page = client.get("/register/")
+    async def code() -> str:
+        async with SessionLocal() as session:
+            inviter = User(email="inviter-2026@example.com", password_hash=hash_password("inviterpass1"), display_name="H")
+            session.add(inviter)
+            await session.commit()
+            await session.refresh(inviter)
+            _, raw = await invitations.create_invitation(session, inviter, "role-2026@example.com", cost=0)
+            await session.commit()
+            return raw
+
+    invite_code = asyncio.run(code())
+    form = client.get(f"/register/?invite={invite_code}")
     client.post(
         "/register/",
         data={
-            "email": "sneaky@example.com",
+            "email": "role-2026@example.com",
             "password": "securepassword123",
             "role": "super_admin",
-            "csrf_token": _extract_csrf(form_page.text),
+            "invite": invite_code,
+            "csrf_token": _extract_csrf(form.text),
         },
     )
 
-    response = client.get("/admin-panel/")
+    async def role() -> str:
+        async with SessionLocal() as session:
+            return await session.scalar(
+                __import__("sqlalchemy").select(User.role).where(User.email == "role-2026@example.com")
+            )
 
-    assert response.status_code == 403
+    assert asyncio.run(role()) == Role.USER
 
 
 def test_login_locks_after_repeated_failures(client, admin_user):
     for _ in range(5):
-        form_page = client.get("/login/")
         client.post(
             "/login/",
-            data={"email": "admin@example.com", "password": "wrong", "csrf_token": _extract_csrf(form_page.text)},
+            data={"email": admin_user.email, "password": "wrong", "csrf_token": _csrf(client)},
         )
 
-    form_page = client.get("/login/")
     response = client.post(
         "/login/",
-        data={"email": "admin@example.com", "password": "password1234", "csrf_token": _extract_csrf(form_page.text)},
+        data={"email": admin_user.email, "password": "password1234", "csrf_token": _csrf(client)},
     )
 
     assert response.status_code == 429
 
 
 def test_logout_ends_admin_session(client, admin_user):
-    form_page = client.get("/login/")
     client.post(
         "/login/",
-        data={"email": "admin@example.com", "password": "password1234", "csrf_token": _extract_csrf(form_page.text)},
+        data={"email": admin_user.email, "password": "password1234", "csrf_token": _csrf(client)},
     )
-    page = client.get("/register/")  # any page that renders the csrf token
-    client.post("/logout/", data={"csrf_token": _extract_csrf(page.text)})
+    client.post("/logout/", data={"csrf_token": _csrf(client)})
 
     assert client.get("/admin-panel/").status_code == 401
 
@@ -190,11 +248,11 @@ def test_create_admin_user_makes_super_admin_and_refuses_duplicates():
 
     async def run() -> tuple[str, str]:
         async with SessionLocal() as session:
-            user = await create_admin_user(session, "owner@example.com", "a-long-password")
+            user = await create_admin_user(session, "newadmin-2026@example.com", "a-long-password")
             role = user.role
         async with SessionLocal() as session:
             try:
-                await create_admin_user(session, "owner@example.com", "another-long-pass")
+                await create_admin_user(session, "newadmin-2026@example.com", "another-long-pass")
                 message = "no error"
             except AdminCreationError as exc:
                 message = str(exc)

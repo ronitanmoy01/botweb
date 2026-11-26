@@ -1,0 +1,12 @@
+You're invited to {{ site_name }}
+
+{{ inviter_name }} has invited you to join {{ site_name }}.
+
+Click this link to create your account (expires in 7 days):
+{{ invite_url }}
+
+If you didn't expect this invitation, you can safely ignore this email.
+
+---
+{{ site_name }}
+{{ base_url }}

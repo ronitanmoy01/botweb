@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-4xl px-4 py-8">
+  <h1 class="mb-2 text-3xl font-bold">My invitations</h1>
+  <p class="mb-6 text-sm text-gray-400">
+    Invitations let you bring someone into {{ site_name }}. Each one costs
+    <strong class="text-white">{{ cost|default(0) }} points</strong> up front, held until it is used or expires.
+  </p>
+
+  {% include "components/form_errors.html" %}
+
+  <div class="mb-8 grid gap-4 sm:grid-cols-3">
+    <div class="rounded-lg bg-card border border-white/10 p-5">
+      <p class="text-sm text-gray-400">Available now</p>
+      <p class="mt-1 text-2xl font-bold text-accent">{{ user_points|default(0) }}</p>
+    </div>
+    <div class="rounded-lg bg-card border border-white/10 p-5">
+      <p class="text-sm text-gray-400">Total earned</p>
+      <p class="mt-1 text-2xl font-bold">{{ points_total|default(0) }}</p>
+    </div>
+    <div class="rounded-lg bg-card border border-white/10 p-5">
+      <p class="text-sm text-gray-400">Reserved on pending</p>
+      <p class="mt-1 text-2xl font-bold text-yellow-400">{{ points_reserved|default(0) }}</p>
+    </div>
+  </div>
+
+  <div class="rounded-lg bg-card border border-white/10 p-6">
+    <h2 class="mb-4 text-xl font-bold">Invite someone</h2>
+    {% if can_invite %}
+    <form method="post" action="/my/invites/create/" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label class="block">
+        <span class="text-sm text-gray-300">Their email address</span>
+        <input name="email" type="email" required autocomplete="email" value="{{ invite_email or '' }}"
+               class="mt-1 w-full rounded-lg bg-surface px-3 py-2 text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent">
+      </label>
+      <button type="submit" class="rounded-lg bg-accent px-5 py-2 font-semibold hover:opacity-90">
+        Create invitation ({{ invite_cost|default(0) }} points)
+      </button>
+    </form>
+    {% else %}
+    <p class="text-sm text-gray-400">You don't have enough available points for another invitation right now.</p>
+    {% endif %}
+  </div>
+
+  <div class="mt-8">
+    <h2 class="mb-4 text-xl font-bold">Your invitations</h2>
+    {% if invites %}
+    <div class="overflow-hidden rounded-lg border border-white/10">
+      <table class="w-full text-sm">
+        <thead class="bg-surface text-left text-gray-400">
+          <tr>
+            <th class="px-4 py-3">Email</th>
+            <th class="px-4 py-3">Status</th>
+            <th class="px-4 py-3">Points</th>
+            <th class="px-4 py-3">Expires</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          {% for invite in invites %}
+          <tr>
+            <td class="px-4 py-3">{{ invite.invitee_email or "—" }}</td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2 py-0.5 text-xs
+                {{ 'bg-green-500/20 text-green-400' if invite.status == 'accepted' else ('bg-gray-500/20 text-gray-400' if invite.status in ('revoked','expired') else 'bg-yellow-500/20 text-yellow-400') }}">
+                {{ invite.status }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-gray-400">{{ invite.points_reserved }}</td>
+            <td class="px-4 py-3 text-gray-400">{{ invite.expires_at.strftime('%b %d, %Y') }}</td>
+            <td class="px-4 py-3 text-right">
+              {% if invite.status == 'pending' %}
+              <form method="post" action="/my/invites/{{ invite.id }}/revoke/">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="text-xs text-red-400 hover:underline">Revoke &amp; refund</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-400">No invitations yet. Create your first one above.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

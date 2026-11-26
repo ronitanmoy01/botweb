@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "MovieHub: movie discovery site and CMS built with FastAPI and Jinja2"
 requires-python = ">=3.12"
 dependencies = [
+    "aiosmtplib>=5.1",
     "aiosqlite>=0.22.1",
     "alembic>=1.20.1",
     "asyncpg>=0.32.0",

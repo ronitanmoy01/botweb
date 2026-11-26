@@ -78,6 +78,38 @@ async def change_role(
     return RedirectResponse(_URL, status_code=303)
 
 
+@router.post("/{user_id}/auto-approve/", response_model=None)
+async def toggle_auto_approve(
+    request: Request,
+    user_id: uuid.UUID,
+    auto_approve: bool = Form(...),
+    csrf_token: str = Form(""),
+    admin: User = Depends(require_roles(*ADMIN_ROLES)),
+    session: AsyncSession = Depends(get_session),
+):
+    """Grant or remove auto-approve, so a trusted member's uploads skip the queue."""
+    check_csrf(request, csrf_token)
+    target = await session.get(User, user_id)
+    if target is None:
+        request.session["flash_message"] = "Invalid request"
+    elif target.id == admin.id:
+        request.session["flash_message"] = "You cannot change your own auto-approve"
+    elif not _may_manage(admin, target):
+        request.session["flash_message"] = "Only a super admin can change an admin account"
+    else:
+        target.can_auto_approve = auto_approve
+        log_action(
+            session, admin,
+            "user.auto_approve_granted" if auto_approve else "user.auto_approve_removed",
+            target=target.email,
+        )
+        await session.commit()
+        request.session["flash_message"] = (
+            f"Auto-approve on for {target.display_name}" if auto_approve else f"Auto-approve off for {target.display_name}"
+        )
+    return RedirectResponse(_URL, status_code=303)
+
+
 @router.post("/{user_id}/status/", response_model=None)
 async def change_status(
     request: Request,

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-md px-4 py-16 text-center">
+  <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-accent/20">
+    <svg class="h-8 w-8 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+  </div>
+  <h1 class="mb-4 text-3xl font-bold">Registration is invite-only</h1>
+  <p class="mb-6 text-gray-400">
+    {{ site_name }} is a members-only community. To join, you need an invitation from an existing member.
+    Members earn invitations with points by contributing to the catalogue.
+  </p>
+  {% if errors %}{% include "components/form_errors.html" %}{% endif %}
+  <div class="rounded-lg bg-card border border-white/10 p-6 text-left">
+    <h2 class="mb-2 font-semibold">How to get in</h2>
+    <ul class="list-disc space-y-2 pl-5 text-sm text-gray-300">
+      <li>Know a member? Ask them to send you an invitation link.</li>
+      <li>Have an invitation code? Open the link they sent you — it will bring you straight to the sign-up form.</li>
+    </ul>
+  </div>
+  <p class="mt-6 text-sm text-gray-400">Already a member? <a href="/login/" class="text-white underline">Sign in</a></p>
+</section>
+{% endblock %}

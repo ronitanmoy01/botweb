@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-6xl px-4 py-12">
+  <h1 class="text-3xl font-bold">Secure Vault</h1>
+  <p class="mt-2 text-gray-400">Review member watch links. Approving awards the poster points exactly once.</p>
+
+  {% if flash_message %}
+  <div class="mt-4 rounded-lg bg-green-500/10 border border-green-500/20 px-4 py-3 text-green-400">{{ flash_message }}</div>
+  {% endif %}
+
+  <h2 class="mt-8 mb-3 text-lg font-semibold">Pending review ({{ pending|length }})</h2>
+  {% if pending %}
+  <div class="space-y-3">
+    {% for row in pending %}
+    <div class="rounded-lg bg-card border border-white/10 p-5">
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <p class="font-semibold">{{ row.title }}</p>
+          <p class="mt-1 text-sm text-blue-400 break-all">{{ row.link.label }} — {{ row.link.url }}</p>
+          <p class="mt-2 text-xs text-gray-500">
+            Added by @{{ row.adder }} · {{ row.link.created_at.strftime('%b %d, %Y %H:%M') }}
+          </p>
+        </div>
+        <div class="flex shrink-0 gap-2">
+          <form method="post" action="/admin-panel/vault/{{ row.link.id }}/approve/">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="rounded bg-green-600 px-3 py-1.5 text-xs font-semibold hover:opacity-90">Approve</button>
+          </form>
+          <form method="post" action="/admin-panel/vault/{{ row.link.id }}/reject/">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input name="note" type="text" placeholder="Note" class="rounded border border-white/10 bg-surface px-2 py-1 text-xs text-white">
+            <button type="submit" class="rounded bg-red-600/70 px-3 py-1.5 text-xs font-semibold hover:opacity-90">Reject</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm text-gray-400">Nothing waiting for review.</p>
+  {% endif %}
+
+  <h2 class="mt-10 mb-3 text-lg font-semibold">Add a link directly</h2>
+  <form method="post" action="/admin-panel/vault/add/" class="flex flex-wrap items-end gap-3 rounded-lg bg-card border border-white/10 p-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="block">
+      <span class="text-xs text-gray-400">Type</span>
+      <select name="kind" class="mt-1 rounded bg-surface px-3 py-2 text-sm text-white ring-1 ring-white/10">
+        <option value="movie">Movie</option>
+        <option value="series">Series</option>
+      </select>
+    </label>
+    <label class="block">
+      <span class="text-xs text-gray-400">Title name</span>
+      <input name="title" type="text" placeholder="Suzume" required
+             class="mt-1 rounded bg-surface px-3 py-2 text-sm text-white ring-1 ring-white/10">
+    </label>
+    <label class="block">
+      <span class="text-xs text-gray-400">Label</span>
+      <input name="label" type="text" placeholder="Server 1" maxlength="100"
+             class="mt-1 rounded bg-surface px-3 py-2 text-sm text-white ring-1 ring-white/10">
+    </label>
+    <label class="block flex-1 min-w-64">
+      <span class="text-xs text-gray-400">URL</span>
+      <input name="url" type="url" placeholder="https://example.com/watch" required
+             class="mt-1 w-full rounded bg-surface px-3 py-2 text-sm text-white ring-1 ring-white/10">
+    </label>
+    <button type="submit" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold hover:opacity-90">Add link</button>
+  </form>
+
+  {% if approved %}
+  <h2 class="mt-10 mb-3 text-lg font-semibold">Recently approved</h2>
+  <div class="overflow-hidden rounded-lg border border-white/10">
+    <table class="w-full text-sm">
+      <thead class="bg-surface text-left text-gray-400">
+        <tr>
+          <th class="px-4 py-3">Title</th>
+          <th class="px-4 py-3">Link</th>
+          <th class="px-4 py-3">Added by</th>
+          <th class="px-4 py-3">Points</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for row in approved %}
+        <tr>
+          <td class="px-4 py-3 font-medium">{{ row.title }}</td>
+          <td class="px-4 py-3 text-blue-400 break-all">{{ row.link.url }}</td>
+          <td class="px-4 py-3 text-gray-400">@{{ row.adder }}</td>
+          <td class="px-4 py-3 text-gray-400">{{ '+' ~ row.link.points_reward if row.link.points_reward else '—' }}</td>
+          <td class="px-4 py-3">
+            <form method="post" action="/admin-panel/vault/{{ row.link.id }}/remove/">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button type="submit" class="rounded bg-red-600/70 px-3 py-1.5 text-xs font-semibold hover:opacity-90">Remove</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if rejected %}
+  <h2 class="mt-10 mb-3 text-lg font-semibold">Recently rejected</h2>
+  <div class="overflow-hidden rounded-lg border border-white/10">
+    <table class="w-full text-sm">
+      <thead class="bg-surface text-left text-gray-400">
+        <tr>
+          <th class="px-4 py-3">Title</th>
+          <th class="px-4 py-3">Link</th>
+          <th class="px-4 py-3">Note</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for row in rejected %}
+        <tr>
+          <td class="px-4 py-3 font-medium">{{ row.title }}</td>
+          <td class="px-4 py-3 text-gray-400 break-all">{{ row.link.url }}</td>
+          <td class="px-4 py-3 text-gray-400">{{ row.link.review_note or "—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

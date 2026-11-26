@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import RedirectResponse
 from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy import select
@@ -10,7 +10,6 @@ from app.core.database import get_session
 from app.core.security import (
     DUMMY_PASSWORD_HASH,
     clear_login_failures,
-    hash_password,
     login_locked,
     password_problem,
     record_login_failure,
@@ -18,11 +17,13 @@ from app.core.security import (
 )
 from app.core.templating import templates
 from app.dependencies.auth import SESSION_USER_KEY, check_csrf, get_csrf_token
-from app.models.user import Role, User
+from app.models.user import User
+from app.services import invitations, tokens
 
 router = APIRouter(include_in_schema=False)
 _EMAIL = TypeAdapter(EmailStr)
 _REGISTER_FAILED = "We couldn't create an account with that email. If you already have one, sign in instead."
+INVITE_SESSION_KEY = "pending_invite"
 
 
 def _render(request: Request, name: str, title: str, status_code: int = 200, **ctx) -> Response:
@@ -75,8 +76,23 @@ async def login_submit(
 
 
 @router.get("/register/")
-async def register_form(request: Request) -> Response:
-    return _render(request, "auth/register.html", "Create account")
+async def register_form(request: Request, invite: str = Query(""), session: AsyncSession = Depends(get_session)) -> Response:
+    # Registration is invite-only. Without a valid invitation, show the closed page;
+    # with one, pre-fill the form and remember the code in the session for the POST.
+    invite = invite.strip()
+    if not invite:
+        return _render(request, "auth/register_closed.html", "Create account")
+    row = await invitations.find_pending_invitation(session, invite)
+    if row is None:
+        return _render(
+            request, "auth/register_closed.html", "Create account", status_code=400,
+            errors=["That invitation is invalid or has already been used."],
+        )
+    request.session[INVITE_SESSION_KEY] = invite
+    return _render(
+        request, "auth/register.html", "Create account",
+        invite=row.invitee_email, invite_code=invite,
+    )
 
 
 @router.post("/register/")
@@ -85,6 +101,7 @@ async def register_submit(
     email: str = Form(""),
     password: str = Form(""),
     display_name: str = Form(""),
+    invite: str = Form(""),
     csrf_token: str = Form(""),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
@@ -99,23 +116,25 @@ async def register_submit(
     if problem := password_problem(password):
         errors.append(problem)
 
+    # An invitation is mandatory; the code comes from the form or from the session
+    # the GET handler stored when the invite link was opened.
+    code = invite.strip() or request.session.get(INVITE_SESSION_KEY, "")
+    invite_row = await invitations.find_pending_invitation(session, code, email)
+    if invite_row is None:
+        errors.append("A valid invitation is required to create an account.")
+
     # Same wording for "taken" and other failures, so the form can't be used to find which emails have accounts.
     if not errors and await session.scalar(select(User.id).where(User.email == email)):
         errors.append(_REGISTER_FAILED)
 
     if errors:
         return _render(
-            request, "auth/register.html", "Create account", status_code=400,
+            request, "auth/register.html" if code else "auth/register_closed.html",
+            "Create account", status_code=400,
             errors=errors, email=email, display_name=display_name,
         )
 
-    user = User(
-        email=email,
-        password_hash=hash_password(password),
-        display_name=display_name.strip()[:100],
-        role=Role.USER,
-    )
-    session.add(user)
+    user = await invitations.accept_invitation(session, invite_row, email, password, display_name)
     try:
         await session.commit()
     except IntegrityError:  # two registrations with the same email raced past the check above
@@ -124,8 +143,42 @@ async def register_submit(
             request, "auth/register.html", "Create account", status_code=400,
             errors=[_REGISTER_FAILED], email=email,
         )
+    request.session.pop(INVITE_SESSION_KEY, None)
+    await _queue_verification(session, user)
+    await session.commit()
     _log_in(request, user)
     return RedirectResponse("/", status_code=303)
+
+
+async def _queue_verification(session: AsyncSession, user: User) -> None:
+    """New accounts must confirm their email; the worker delivers the link."""
+    from datetime import timedelta
+
+    from app.core.config import get_settings
+    from app.models.tokens import EmailVerificationToken
+    from app.services.email import enqueue_email
+
+    settings = get_settings()
+    raw = await tokens.issue_token(session, EmailVerificationToken, user.id, lifetime=timedelta(hours=settings.email_verification_token_expire_hours))
+    await enqueue_email(
+        session,
+        recipient=user.email,
+        subject=f"Verify your {settings.site_name} email",
+        template_name="email_verification",
+        template_data={
+            "display_name": user.display_name,
+            "recipient_email": user.email,
+            "verify_link": f"{settings.app_base_url.rstrip('/')}/verify-email/{raw}/",
+            "expires_at": (_utcnow() + timedelta(hours=settings.email_verification_token_expire_hours)).strftime("%Y-%m-%d %H:%M UTC"),
+        },
+        dedupe_key=f"email_verification:{user.id}:{raw[:16]}",
+    )
+
+
+def _utcnow():
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 @router.post("/logout/")

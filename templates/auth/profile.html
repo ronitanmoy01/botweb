@@ -2,6 +2,9 @@
 
 {% block content %}
 <section class="mx-auto max-w-6xl px-4 py-8">
+  {% if flash_message %}
+  <div class="mb-6 rounded-lg bg-green-500/10 border border-green-500/20 px-4 py-3 text-green-400">{{ flash_message }}</div>
+  {% endif %}
   <!-- Profile Header -->
   <div class="rounded-lg bg-gradient-to-r from-accent/10 via-purple-500/10 to-blue-500/10 border border-white/10 p-8">
     <div class="flex items-start justify-between">
@@ -16,12 +19,58 @@
             <span class="rounded-full bg-accent/20 px-3 py-1 text-accent">{{ user.role.replace('_', ' ').title() }}</span>
             <span class="block text-gray-400">Member since {{ user.created_at.day }} {{ user.created_at.strftime('%B %Y') }}</span>
           </div>
+          <form method="post" action="/profile/name/" class="mt-4 flex items-center gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input name="display_name" type="text" value="{{ user.display_name or '' }}" maxlength="100" required minlength="2"
+                   placeholder="Display name" aria-label="Display name"
+                   class="w-56 rounded bg-surface px-3 py-1.5 text-sm text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent">
+            <button type="submit" class="rounded bg-accent/80 px-3 py-1.5 text-xs font-semibold hover:bg-accent">Save name</button>
+          </form>
         </div>
       </div>
       {% if user.role in admin_roles %}
       <a href="/admin-panel/" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold hover:opacity-90">Admin Panel</a>
       {% endif %}
     </div>
+  </div>
+
+  <!-- Points & reputation -->
+  <div class="mt-6 rounded-lg bg-card border border-white/10 p-6">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="rounded-full px-3 py-1 text-sm font-semibold" style="background-color:{{ level.color }}22;color:{{ level.color }}">{{ level.name }}</span>
+        <div>
+          <p class="text-2xl font-bold text-accent">{{ points_available|default(0) }}</p>
+          <p class="text-xs text-gray-400">available points</p>
+        </div>
+        <div>
+          <p class="text-2xl font-bold">{{ user.points_lifetime|default(0) }}</p>
+          <p class="text-xs text-gray-400">lifetime points</p>
+        </div>
+        {% if user.points_reserved %}
+        <div>
+          <p class="text-2xl font-bold text-yellow-400">{{ user.points_reserved }}</p>
+          <p class="text-xs text-gray-400">reserved on invites</p>
+        </div>
+        {% endif %}
+      </div>
+      <div class="flex gap-4 text-sm">
+        <a href="/my/invites/" class="text-accent hover:underline">My invitations →</a>
+        <a href="/my/contributions/" class="text-accent hover:underline">Contribute →</a>
+        <a href="/leaderboard/" class="text-accent hover:underline">Leaderboard →</a>
+      </div>
+    </div>
+    {% if level_progress.next %}
+    <div class="mt-4">
+      <div class="flex justify-between text-xs text-gray-400">
+        <span>{{ level.name }}</span>
+        <span>{{ level_progress.next.name }} — {{ level_progress.remaining }} points to go</span>
+      </div>
+      <div class="mt-1 h-2 overflow-hidden rounded-full bg-surface">
+        <div class="h-full rounded-full" style="width:{{ level_progress.pct }}%;background-color:{{ level_progress.next.color }}"></div>
+      </div>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Activity Stats -->

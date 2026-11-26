@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-4xl px-4 py-8">
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="mb-1 text-3xl font-bold">My contributions</h1>
+      <p class="text-sm text-gray-400">Submit titles, corrections or missing details. Each approved contribution earns you points.</p>
+    </div>
+    <a href="/contribute/" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold hover:opacity-90">New contribution</a>
+  </div>
+
+  {% if contributions %}
+  <div class="overflow-hidden rounded-lg border border-white/10">
+    <table class="w-full text-sm">
+      <thead class="bg-surface text-left text-gray-400">
+        <tr>
+          <th class="px-4 py-3">Title</th>
+          <th class="px-4 py-3">Submitted</th>
+          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3">Note</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for c in contributions %}
+        <tr>
+          <td class="px-4 py-3 font-medium">{{ c.title }}</td>
+          <td class="px-4 py-3 text-gray-400">{{ c.created_at.strftime('%b %d, %Y') }}</td>
+          <td class="px-4 py-3">
+            <span class="rounded-full px-2 py-0.5 text-xs
+              {{ 'bg-green-500/20 text-green-400' if c.status == 'approved' else ('bg-red-500/20 text-red-400' if c.status == 'rejected' else 'bg-yellow-500/20 text-yellow-400') }}">
+              {{ c.status }}
+            </span>
+            {% if c.points_reward %}<span class="ml-1 text-xs text-accent">+{{ c.points_reward }}</span>{% endif %}
+          </td>
+          <td class="px-4 py-3 text-gray-400">{{ c.review_note or "—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-sm text-gray-400">You haven't contributed anything yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-5xl px-4 py-12">
+  <h1 class="text-3xl font-bold">Email settings</h1>
+  <p class="mt-2 text-gray-400">Configure the SMTP connection, then send a test to confirm delivery. Settings are held in the running session — restarts require re-entry.</p>
+
+  {% if flash_message %}
+  <div class="mt-4 rounded-lg bg-green-500/10 border border-green-500/20 px-4 py-3 text-green-400">{{ flash_message }}</div>
+  {% endif %}
+
+  <div class="mt-6 grid gap-3 sm:grid-cols-3">
+    <div class="rounded-lg bg-card border border-white/10 p-4">
+      <p class="text-xs text-gray-400">Configured</p>
+      <p class="mt-1 text-lg font-semibold {{ 'text-green-400' if configured else 'text-yellow-400' }}">{{ 'Yes' if configured else 'Incomplete' }}</p>
+    </div>
+    <div class="rounded-lg bg-card border border-white/10 p-4">
+      <p class="text-xs text-gray-400">Queued</p>
+      <p class="mt-1 text-lg font-semibold">{{ queued }}</p>
+    </div>
+    <div class="rounded-lg bg-card border border-white/10 p-4">
+      <p class="text-xs text-gray-400">Failed</p>
+      <p class="mt-1 text-lg font-semibold {{ 'text-red-400' if failed else '' }}">{{ failed }}</p>
+    </div>
+  </div>
+
+  <form method="post" action="/admin-panel/email/settings/" class="mt-8 grid gap-4 sm:grid-cols-2">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="flex items-center gap-2">
+      <input type="checkbox" name="mail_enabled" value="true" {{ 'checked' if current.mail_enabled else '' }} class="rounded">
+      <span class="text-sm">Enable email sending</span>
+    </label>
+    <label class="flex items-center gap-2">
+      <input type="checkbox" name="use_ssl" value="true" {{ 'checked' if current.smtp_use_ssl else '' }} class="rounded">
+      <span class="text-sm">Use SSL (port 465). Uncheck for STARTTLS (587).</span>
+    </label>
+
+    <label class="block">
+      <span class="text-sm text-gray-300">SMTP host</span>
+      <input name="smtp_host" type="text" value="{{ current.smtp_host }}" class="mt-1 w-full rounded-lg bg-surface px-3 py-2 text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent">
+    </label>
+    <label class="block">
+      <span class="text-sm text-gray-300">SMTP port</span>
+      <input name="smtp_port" type="number" min="1" max="65535" value="{{ current.smtp_port }}" class="mt-1 w-full rounded-lg bg-surface px-3 py-2 text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent">
+    </label>
+    <label class="block">
+      <span class="text-sm text-gray-300">Username</span>
+      <input name="smtp_username" type="text" value="{{ current.smtp_username }}" class="mt-1 w-full rounded-lg bg-surface px-3 py-2 text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent">
+    </label>
+    <label class="block">
+      <span class="text-sm text-gray-300">App password</span>
+      <input name="smtp_password" type="password" autocomplete="new-password" placeholder="Leave blank to keep current" class="mt-1 w-full rounded-lg bg-surface px-3 py-2 text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent">
+    </label>
+    <label class="block">
+      <span class="text-sm text-gray-300">From address</span>
+      <input name="mail_from_address" type="email" value="{{ current.mail_from_address }}" class="mt-1 w-full rounded-lg bg-surface px-3 py-2 text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent">
+    </label>
+    <label class="block">
+      <span class="text-sm text-gray-300">From name</span>
+      <input name="mail_from_name" type="text" value="{{ current.mail_from_name }}" class="mt-1 w-full rounded-lg bg-surface px-3 py-2 text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent">
+    </label>
+
+    <div class="sm:col-span-2">
+      <button type="submit" class="rounded-lg bg-accent px-5 py-2 font-semibold hover:opacity-90">Save settings</button>
+    </div>
+  </form>
+
+  <div class="mt-8 rounded-lg bg-card border border-white/10 p-6">
+    <h2 class="mb-1 text-lg font-semibold">Send a test email</h2>
+    <p class="mb-4 text-xs text-gray-400">Sends a real message using the current settings. Great for confirming an App Password works before inviting members.</p>
+    <form method="post" action="/admin-panel/email/test/" class="flex flex-col gap-3 sm:flex-row">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input name="recipient" type="email" required placeholder="your@email.com" class="flex-1 rounded-lg bg-surface px-3 py-2 text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent">
+      <button type="submit" class="rounded-lg bg-green-600 px-5 py-2 font-semibold hover:opacity-90">Send test</button>
+    </form>
+  </div>
+
+  <div class="mt-8">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold">Recent activity</h2>
+      <a href="/admin-panel/email/log/" class="text-sm text-accent hover:underline">Full log →</a>
+    </div>
+    {% if recent %}
+    <div class="mt-3 overflow-hidden rounded-lg border border-white/10">
+      <table class="w-full text-sm">
+        <thead class="bg-surface text-left text-gray-400">
+          <tr>
+            <th class="px-4 py-2">To</th>
+            <th class="px-4 py-2">Status</th>
+            <th class="px-4 py-2">Attempts</th>
+            <th class="px-4 py-2">When</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          {% for job in recent[:8] %}
+          <tr>
+            <td class="px-4 py-2">{{ job.recipient }}</td>
+            <td class="px-4 py-2">
+              <span class="rounded-full px-2 py-0.5 text-xs
+                {{ 'bg-green-500/20 text-green-400' if job.status == 'sent' else ('bg-red-500/20 text-red-400' if job.status == 'failed' else 'bg-yellow-500/20 text-yellow-400') }}">
+                {{ job.status }}
+              </span>
+            </td>
+            <td class="px-4 py-2 text-gray-400">{{ job.attempt_count }}</td>
+            <td class="px-4 py-2 text-gray-400">{{ job.created_at.strftime('%b %d %H:%M') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="mt-3 text-sm text-gray-400">No emails have been sent yet.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

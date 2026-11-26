@@ -143,6 +143,40 @@ async def _tags(session, model, names: list[str], extras: list[str] = []) -> lis
     return tags
 
 
+def _title_fields(data: dict, model, *, status: MovieStatus) -> dict:
+    """Map a v2 title dict onto Movie/Series columns, minus tags and slug owner."""
+    description = html.unescape(data.get("plotsummary") or data.get("plot") or "").strip()
+    plot = html.unescape(data.get("plot") or "").strip()
+    rating = data.get("rating") or {}
+    metascore = data.get("metascore")
+    metascore = metascore.get("score") if isinstance(metascore, dict) else None
+    fields = {
+        "title": (data.get("title") or "").strip()[:200],
+        "original_title": (data.get("original_title") or "").strip()[:200],
+        "release_year": data.get("year"),
+        "rating": rating.get("value") if isinstance(rating, dict) else None,
+        "imdb_votes": rating.get("vote_count") if isinstance(rating, dict) else None,
+        "metascore": metascore,
+        "awards": _awards_text(data.get("awards")),
+        "directors": _names(data.get("directors")),
+        "writers": _names(data.get("writers")),
+        "actors": _names(data.get("stars")),
+        "age_rating": (data.get("certificate") or "").strip()[:16],
+        "short_description": _truncate(plot, 500),
+        "description": description,
+        "poster_path": _download_image((data.get("image") or {}).get("link")),
+        "status": status,
+    }
+    if status == MovieStatus.PUBLISHED:
+        fields["published_at"] = datetime.now(timezone.utc).replace(tzinfo=None)
+    if model is Movie:
+        fields["runtime_minutes"] = data.get("runtime_minutes")
+        fields["box_office"] = _box_office_text(data.get("box_office"))
+    if model is Series:
+        fields["creators"] = _names(data.get("creators"))
+    return fields
+
+
 async def save_title(session, data: dict) -> str:
     """Save one v2 title dict as a published Movie or Series."""
     if data.get("is_episode"):
@@ -160,35 +194,8 @@ async def save_title(session, data: dict) -> str:
     if await session.scalar(duplicate) is not None:
         return f"skipped: {kind} '{title}' ({year}) already exists"
 
-    description = html.unescape(data.get("plotsummary") or data.get("plot") or "").strip()
-    plot = html.unescape(data.get("plot") or "").strip()
-    rating = data.get("rating") or {}
-    metascore = data.get("metascore")
-    metascore = metascore.get("score") if isinstance(metascore, dict) else None
-    fields = {
-        "title": title,
-        "original_title": (data.get("original_title") or "").strip()[:200],
-        "slug": await unique_slug(session, model, slugify(title)),
-        "release_year": year,
-        "rating": rating.get("value") if isinstance(rating, dict) else None,
-        "imdb_votes": rating.get("vote_count") if isinstance(rating, dict) else None,
-        "metascore": metascore,
-        "awards": _awards_text(data.get("awards")),
-        "directors": _names(data.get("directors")),
-        "writers": _names(data.get("writers")),
-        "actors": _names(data.get("stars")),
-        "age_rating": (data.get("certificate") or "").strip()[:16],
-        "short_description": _truncate(plot, 500),
-        "description": description,
-        "poster_path": _download_image((data.get("image") or {}).get("link")),
-        "status": MovieStatus.PUBLISHED,
-        "published_at": datetime.now(timezone.utc).replace(tzinfo=None),
-    }
-    if model is Movie:
-        fields["runtime_minutes"] = data.get("runtime_minutes")
-        fields["box_office"] = _box_office_text(data.get("box_office"))
-    if model is Series:
-        fields["creators"] = _names(data.get("creators"))
+    fields = _title_fields(data, model, status=MovieStatus.PUBLISHED)
+    fields["slug"] = await unique_slug(session, model, slugify(title))
 
     item = model(**fields)
     item.genres = await _tags(session, Genre, data.get("genres") or [])
@@ -196,7 +203,26 @@ async def save_title(session, data: dict) -> str:
     item.countries = await _tags(session, Country, data.get("countries_of_origin") or [])
     session.add(item)
     await session.commit()
-    return f"saved {kind}: '{title}' ({year}), {len(description)} chars description"
+    return f"saved {kind}: '{title}' ({year}), {len(fields['description'])} chars description"
+
+
+async def enrich_title(session, item, data: dict) -> None:
+    """Fill a pending Movie/Series from scraped IMDb data, keeping its status.
+
+    Used by the /contribute/ flow: the submit has no title or poster of its own —
+    everything (including the poster) comes from IMDb, and the moderation state
+    the route set is left alone.
+    """
+    fields = _title_fields(data, type(item), status=item.status)
+    for column, value in fields.items():
+        setattr(item, column, value)
+    # Assign the collections before the item is flushed. A query in _tags would otherwise
+    # autoflush the pending row, and setting a collection on a persistent row needs a lazy
+    # diff at flush — that fails with MissingGreenlet outside a greenlet.
+    with session.no_autoflush:
+        item.genres = await _tags(session, Genre, data.get("genres") or [])
+        item.languages = await _tags(session, Language, data.get("spoken_languages") or [])
+        item.countries = await _tags(session, Country, data.get("countries_of_origin") or [])
 
 
 async def _save_all(items: list[dict]) -> int:

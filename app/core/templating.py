@@ -2,6 +2,7 @@ from datetime import datetime
 
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
+from markupsafe import escape
 
 from app.core.config import BASE_DIR, get_settings
 from app.models.user import ADMIN_ROLES
@@ -83,12 +84,17 @@ def _person_links(names: str) -> str:
 
     Input: "Bong Joon Ho, Han Jin-won"
     Output: '<a href="/person/bong-joon-ho/">Bong Joon Ho</a>, <a href="/person/han-jin-won/">Han Jin-won</a>'
+
+    Escapes HTML in names to prevent stored XSS from DB-sourced director/writer/actor fields.
     """
     from app.services.media import slugify
+    from urllib.parse import quote
     if not names or not names.strip():
         return ""
     parts = [n.strip() for n in names.split(",") if n.strip()]
-    links = [f'<a href="/person/{slugify(n)}/" class="text-accent hover:underline">{n}</a>' for n in parts]
+    # The href is percent-encoded, not HTML-escaped: a '"' in a slug decodes back to
+    # a real quote before attribute parsing, so escaping alone cannot keep it inert.
+    links = [f'<a href="/person/{quote(slugify(n), safe="")}/" class="text-accent hover:underline">{escape(n)}</a>' for n in parts]
     return ", ".join(links)
 
 

@@ -36,14 +36,25 @@ def _isolate_state():
     from app.core import security
     from app.core.database import SessionLocal, engine
     from app.models.catalog import Movie, Series
+    from app.models.community import Invitation, RegistrationApplication
+    from app.models.email import EmailOutbox
     from app.models.user import User
+    from app.models.vault import VaultLink
 
     async def clear() -> None:
         async with SessionLocal() as session:
             # Foreign keys cascade, so clearing movies/series clears junctions,
             # favorites, reviews, watchlists, comments and seasons/episodes.
+            # Deleting a user also cascades their tokens, ledger rows and invitations.
+            # Applications point at users with SET NULL, and the outbox has no
+            # user FK at all, so both need an explicit delete. Vault links point
+            # at both titles and users, so they cascade on either side.
             await session.execute(delete(Movie))
             await session.execute(delete(Series))
+            await session.execute(delete(EmailOutbox))
+            await session.execute(delete(RegistrationApplication))
+            await session.execute(delete(Invitation))
+            await session.execute(delete(VaultLink))
             await session.execute(delete(User))
             await session.commit()
         await engine.dispose()

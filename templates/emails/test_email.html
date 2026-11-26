@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block heading %}Email test successful{% endblock %}
+
+{% block body %}
+<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#d1d5db;">
+  Hello{% if display_name %}, {{ display_name }}{% endif %}!
+</p>
+<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#d1d5db;">
+  This is a test message from <strong style="color:#ffffff;">{{ site_name }}</strong>.
+  If you can read this, the SMTP connection is working correctly.
+</p>
+<p style="margin:0;font-size:13px;line-height:1.6;color:#9ca3af;">
+  Sender: {{ from_address }}<br>
+  Reply-to is optional and not configured.
+</p>
+{% endblock %}

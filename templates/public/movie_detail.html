@@ -77,6 +77,14 @@
       </div>
       {% endif %}
 
+      {% if imdb_url %}
+      <div class="mt-4">
+        <a href="{{ imdb_url }}" target="_blank" rel="noopener noreferrer" class="inline-block">
+          <img src="/static/images/imdb-link.png" alt="View on IMDb" class="h-6">
+        </a>
+      </div>
+      {% endif %}
+
       {% if movie.short_description %}
       <p class="mt-6 text-xl leading-relaxed text-gray-200">{{ movie.short_description }}</p>
       {% endif %}
@@ -114,5 +122,6 @@
       {% include "components/social.html" %}
     </div>
   </div>
+  {% include "components/vault.html" %}
 </section>
 {% endblock %}

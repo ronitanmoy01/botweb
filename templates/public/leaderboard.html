@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-4xl px-4 py-8">
+  <h1 class="mb-2 text-3xl font-bold">Leaderboard</h1>
+  <p class="mb-6 text-sm text-gray-400">Top members ranked by active points. Points are earned by contributing and by inviting members who join.</p>
+
+  {% if ranked %}
+  <div class="overflow-hidden rounded-lg border border-white/10">
+    <table class="w-full text-sm">
+      <thead class="bg-surface text-left text-gray-400">
+        <tr>
+          <th class="px-4 py-3 w-12">#</th>
+          <th class="px-4 py-3">Member</th>
+          <th class="px-4 py-3">Level</th>
+          <th class="px-4 py-3 text-right">Points</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for rank, member, level, is_staff in ranked %}
+        <tr class="hover:bg-white/5">
+          <td class="px-4 py-3 font-bold
+              {{ 'text-yellow-400' if rank == 1 else ('text-gray-300' if rank == 2 else ('text-orange-400' if rank == 3 else 'text-gray-500')) }}">
+            {{ rank }}
+          </td>
+          <td class="px-4 py-3">
+            <a href="/member/{{ member.display_name }}/" class="font-medium hover:text-accent">
+              {{ member.display_name or member.email.split('@')[0] }}
+            </a>
+            {% if is_staff %}
+            <span class="ml-2 rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">Staff</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            <span class="rounded-full px-2 py-0.5 text-xs" style="background-color:{{ level.color }}22;color:{{ level.color }}">{{ level.name }}</span>
+          </td>
+          <td class="px-4 py-3 text-right font-semibold">{{ member.points_balance|default(0) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-6 flex flex-wrap gap-2 text-xs text-gray-500">
+    {% for level in levels %}
+    <span class="rounded-full border border-white/10 px-2 py-1" style="color:{{ level.color }}">{{ level.name }} {{ level.min_lifetime }}</span>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm text-gray-400">No members yet. Contribute or invite someone to get on the board.</p>
+  {% endif %}
+</section>
+{% endblock %}

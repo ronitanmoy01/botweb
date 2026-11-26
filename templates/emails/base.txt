@@ -1,0 +1,7 @@
+{{ subject }}
+
+{% block body_txt %}{% endblock %}
+
+---
+This message was sent by {{ site_name }} at {{ now }}.
+If you did not expect it, you can safely ignore it.

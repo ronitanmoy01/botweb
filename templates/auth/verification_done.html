@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-md px-4 py-16 text-center">
+  <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
+    <svg class="h-8 w-8 text-green-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+  </div>
+  <h1 class="mb-4 text-3xl font-bold">Email verified</h1>
+  <p class="mb-6 text-gray-400">Your email address is confirmed. Your account is now fully secured.</p>
+  <a href="/profile/" class="rounded-lg bg-accent px-6 py-2 font-semibold hover:opacity-90">Go to profile</a>
+</section>
+{% endblock %}

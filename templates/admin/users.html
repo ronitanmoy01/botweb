@@ -16,6 +16,7 @@
           <th class="px-4 py-3 font-medium">User</th>
           <th class="px-4 py-3 font-medium">Role</th>
           <th class="px-4 py-3 font-medium">Status</th>
+          <th class="px-4 py-3 font-medium">Auto-approve</th>
           <th class="px-4 py-3 font-medium">Joined</th>
           <th class="px-4 py-3 font-medium">Actions</th>
         </tr>
@@ -50,6 +51,21 @@
             <span class="text-green-400">Active</span>
             {% else %}
             <span class="text-red-400">Banned</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            {% if can_manage and not is_self %}
+            <form method="post" action="/admin-panel/users/{{ u.id }}/auto-approve/" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="hidden" name="auto_approve" value="{{ 'false' if u.can_auto_approve else 'true' }}">
+              <button type="submit" class="text-blue-400 hover:underline">
+                {{ 'Remove' if u.can_auto_approve else 'Grant' }}
+              </button>
+            </form>
+            {% elif u.can_auto_approve %}
+            <span class="text-green-400">Granted</span>
+            {% else %}
+            <span class="text-xs text-gray-600">—</span>
             {% endif %}
           </td>
           <td class="px-4 py-3 text-gray-400">{{ u.created_at.strftime('%d %b %Y') if u.created_at else '' }}</td>

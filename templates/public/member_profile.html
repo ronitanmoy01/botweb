@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-4xl px-4 py-8">
+  <div class="rounded-lg bg-gradient-to-r from-accent/10 via-purple-500/10 to-blue-500/10 border border-white/10 p-8">
+    <div class="flex items-center gap-6">
+      <div class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent to-purple-600 text-2xl font-bold">
+        {{ member.display_name[0].upper() if member.display_name else member.email[0].upper() }}
+      </div>
+      <div>
+        <h1 class="text-3xl font-bold">{{ member.display_name or member.email.split('@')[0] }}</h1>
+        <div class="mt-2 flex flex-wrap items-center gap-3 text-sm">
+          <span class="rounded-full px-3 py-1" style="background-color:{{ level.color }}22;color:{{ level.color }}">{{ level.name }}</span>
+          <span class="text-gray-400">Joined {{ member.created_at.strftime('%b %Y') }}</span>
+          <span class="text-gray-400">Rank #{{ rank }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-6 grid gap-4 sm:grid-cols-3">
+    <div class="rounded-lg bg-card border border-white/10 p-5">
+      <p class="text-sm text-gray-400">Lifetime points</p>
+      <p class="mt-1 text-2xl font-bold text-accent">{{ member.points_lifetime|default(0) }}</p>
+    </div>
+    <div class="rounded-lg bg-card border border-white/10 p-5">
+      <p class="text-sm text-gray-400">Available points</p>
+      <p class="mt-1 text-2xl font-bold">{{ member.points_balance|default(0) }}</p>
+    </div>
+    <div class="rounded-lg bg-card border border-white/10 p-5">
+      <p class="text-sm text-gray-400">Approved contributions</p>
+      <p class="mt-1 text-2xl font-bold">{{ approved_contributions|length }}</p>
+    </div>
+  </div>
+
+  {% if approved_contributions %}
+  <div class="mt-6">
+    <h2 class="mb-4 text-xl font-bold">Contributed titles</h2>
+    <ul class="divide-y divide-white/5 rounded-lg border border-white/10">
+      {% for c in approved_contributions %}
+      <li class="px-4 py-3 text-sm">
+        <span class="font-medium">{{ c.title }}</span>
+        <span class="text-gray-500">· approved {{ c.reviewed_at.strftime('%b %d, %Y') if c.reviewed_at else '' }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="mt-6">
+    <a href="/leaderboard/" class="text-sm text-accent hover:underline">View full leaderboard →</a>
+  </div>
+</section>
+{% endblock %}

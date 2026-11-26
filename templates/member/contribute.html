@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-2xl px-4 py-8">
+  <h1 class="mb-2 text-3xl font-bold">Contribute</h1>
+  <p class="mb-6 text-sm text-gray-400">
+    Add a movie or series from IMDb with watch links. {% if instant %}Your uploads publish instantly.{% else %}Submissions go to admin review.{% endif %}
+  </p>
+  {% include "components/form_errors.html" %}
+  <form method="post" action="/contribute/" class="space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <label class="block">
+      <span class="text-sm text-gray-300">Type</span>
+      <select name="kind" class="mt-1 w-full rounded-lg bg-card px-3 py-2 text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent">
+        <option value="movie" {{ 'selected' if form.get('kind', 'movie') == 'movie' else '' }}>Movie</option>
+        <option value="series" {{ 'selected' if form.get('kind') == 'series' else '' }}>Series</option>
+      </select>
+    </label>
+
+    <label class="block">
+      <span class="text-sm text-gray-300">IMDb URL</span>
+      <input name="imdb_url" type="url" required placeholder="https://www.imdb.com/title/tt1234567/" value="{{ form.get('imdb_url', '') }}"
+             class="mt-1 w-full rounded-lg bg-card px-3 py-2 text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent">
+      <span class="mt-1 text-xs text-gray-500">Title, year, poster, and description are imported automatically.</span>
+    </label>
+
+    <div class="rounded-lg border border-white/10 bg-card/50 p-4">
+      <p class="mb-3 text-sm font-semibold text-gray-300">Watch links (min {{ min_links }})</p>
+      <p class="mb-4 text-xs text-gray-500">One per line. The IMDb link is added automatically.</p>
+
+      <label class="block mb-3">
+        <span class="text-xs text-gray-400">Labels</span>
+        <textarea name="link_labels" rows="4" placeholder="Server 1&#10;Google Drive&#10;Direct Download" class="mt-1 w-full rounded bg-surface px-3 py-2 text-sm text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent font-mono">{{ form.get('link_labels', '') }}</textarea>
+      </label>
+
+      <label class="block">
+        <span class="text-xs text-gray-400">URLs</span>
+        <textarea name="link_urls" rows="4" required placeholder="https://example.com/watch/123&#10;https://drive.google.com/file/d/xyz&#10;https://files.example/movie.mp4" class="mt-1 w-full rounded bg-surface px-3 py-2 text-sm text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent font-mono">{{ form.get('link_urls', '') }}</textarea>
+      </label>
+    </div>
+
+    <button type="submit" class="rounded-lg bg-accent px-5 py-2 font-semibold hover:opacity-90">
+      {% if instant %}Publish now{% else %}Submit for review{% endif %}
+    </button>
+  </form>
+</section>
+{% endblock %}

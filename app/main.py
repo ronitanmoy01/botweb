@@ -1,3 +1,6 @@
+import asyncio
+import logging
+
 from fastapi import Depends, FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -6,12 +9,15 @@ from app.core.config import BASE_DIR, get_settings
 from app.core.templating import templates
 from app.dependencies.auth import get_current_user
 from app.routers import health, seo
-from app.routers.admin import analytics as admin_analytics, audit as admin_audit, dashboard, moderation, movies as admin_movies, series as admin_series, taxonomies as admin_taxonomies, users as admin_users
-from app.routers.auth import accounts, profile
-from app.routers.member import features as member_features, social as member_social
+from app.routers.admin import analytics as admin_analytics, applications as admin_applications, audit as admin_audit, contributions as admin_contributions, dashboard, email as admin_email, mail_log, moderation, movies as admin_movies, series as admin_series, taxonomies as admin_taxonomies, users as admin_users, vault as admin_vault
+from app.routers.auth import accounts, email_verification, password_reset, profile
+from app.routers.community import leaderboard, public_profile
+from app.routers.member import community as member_community, features as member_features, social as member_social
 from app.routers.public import catalog, home, person
+from app.services import email_worker
 
 SESSION_MAX_AGE_SECONDS = 14 * 24 * 60 * 60
+logger = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
@@ -24,6 +30,33 @@ def create_app() -> FastAPI:
         redoc_url=None,
         dependencies=[Depends(get_current_user)],  # resolves the user once per request for the header
     )
+
+    _email_worker_stop: asyncio.Event | None = None
+    _email_worker_task: asyncio.Task | None = None
+
+    @app.on_event("startup")
+    async def _start_email_worker() -> None:
+        """Drain the email outbox on a background task. Never crashes the app if SMTP is misconfigured."""
+        nonlocal _email_worker_stop, _email_worker_task
+        if not email_worker.worker_available():
+            if settings.mail_enabled and not settings.email_configured:
+                logger.warning("Email is enabled but SMTP is not fully configured; the worker will not start.")
+            return
+        _email_worker_stop = asyncio.Event()
+        _email_worker_task = asyncio.create_task(email_worker.worker_loop(_email_worker_stop))
+        logger.info("Email worker started")
+
+    @app.on_event("shutdown")
+    async def _stop_email_worker() -> None:
+        nonlocal _email_worker_stop, _email_worker_task
+        if _email_worker_stop is not None:
+            _email_worker_stop.set()
+        if _email_worker_task is not None:
+            try:
+                await asyncio.wait_for(_email_worker_task, timeout=30)
+            except (asyncio.TimeoutError, Exception):  # noqa: BLE001 - shutdown must not hang
+                _email_worker_task.cancel()
+
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.secret_key,
@@ -60,8 +93,18 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(accounts.router)
     app.include_router(profile.router)
+    app.include_router(password_reset.router)
+    app.include_router(email_verification.router)
+    app.include_router(member_community.router)
     app.include_router(member_features.router)
     app.include_router(member_social.router)
+    app.include_router(leaderboard.router)
+    app.include_router(public_profile.router)
+    app.include_router(admin_email.router)
+    app.include_router(mail_log.router)
+    app.include_router(admin_applications.router)
+    app.include_router(admin_contributions.router)
+    app.include_router(admin_vault.router)
     app.include_router(dashboard.router)
     app.include_router(admin_movies.router)
     app.include_router(admin_series.router)

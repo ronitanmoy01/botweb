@@ -1,16 +1,15 @@
-from tests.test_auth import _extract_csrf, admin_user, client  # noqa: F401  reuse fixtures
+from tests.test_auth import _csrf, _join, admin_user, client  # noqa: F401  reuse fixtures
 
 
-def _login_admin(client) -> None:
-    csrf = _extract_csrf(client.get("/login/").text)
+def _login_admin(client, admin_user) -> None:
     client.post(
         "/login/",
-        data={"email": "admin@example.com", "password": "password1234", "csrf_token": csrf},
+        data={"email": admin_user.email, "password": "password1234", "csrf_token": _csrf(client)},
     )
 
 
 def test_admin_sees_admin_panel_button(client, admin_user):
-    _login_admin(client)
+    _login_admin(client, admin_user)
 
     html = client.get("/").text
 
@@ -20,16 +19,7 @@ def test_admin_sees_admin_panel_button(client, admin_user):
 
 
 def test_regular_user_does_not_see_admin_panel_button(client):
-    csrf = _extract_csrf(client.get("/register/").text)
-    client.post(
-        "/register/",
-        data={
-            "email": "reader@example.com",
-            "password": "securepassword123",
-            "display_name": "Reader",
-            "csrf_token": csrf,
-        },
-    )
+    _join(client, "reader-2026@example.com", "securepassword123", "Reader")
 
     html = client.get("/").text
 
