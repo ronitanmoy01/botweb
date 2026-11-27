@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-4xl px-4 py-12">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">Manage titles</h1>
+      <p class="mt-1 text-sm text-gray-400">Pick a movie or series to add, edit, or remove its downloads links.</p>
+    </div>
+    <a href="/admin-panel/vault/" class="text-sm text-blue-400 hover:underline">← Back to vault queue</a>
+  </div>
+
+  <form method="get" action="/admin-panel/vault/titles/" class="mt-6 flex gap-3">
+    <input name="q" type="search" value="{{ q }}" placeholder="Search by title…"
+           class="flex-1 rounded-lg bg-surface px-4 py-2 text-sm text-white ring-1 ring-white/10 focus:outline-none focus:ring-accent">
+    <button type="submit" class="rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20">Search</button>
+  </form>
+
+  {% if titles %}
+  <div class="mt-6 overflow-hidden rounded-lg border border-white/10">
+    <table class="w-full text-sm">
+      <thead class="bg-surface text-left text-gray-400">
+        <tr>
+          <th class="px-4 py-3">Title</th>
+          <th class="px-4 py-3">Type</th>
+          <th class="px-4 py-3">Approved links</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for row in titles %}
+        <tr>
+          <td class="px-4 py-3 font-medium">{{ row.item.title }}</td>
+          <td class="px-4 py-3 text-gray-400 capitalize">{{ row.kind }}</td>
+          <td class="px-4 py-3 text-gray-400">{{ row.approved }}</td>
+          <td class="px-4 py-3 text-right">
+            <a href="/admin-panel/vault/titles/{{ row.kind }}/{{ row.item.id }}/"
+               class="rounded bg-accent/90 px-3 py-1.5 text-xs font-semibold hover:opacity-90">Manage links</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="mt-6 text-sm text-gray-400">No titles matched {{ q }}.</p>
+  {% endif %}
+</section>
+{% endblock %}

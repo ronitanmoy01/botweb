@@ -476,6 +476,173 @@ def test_admin_can_add_a_link_directly(client):
     assert link is not None and link.status == VaultStatus.APPROVED
 
 
+def test_admin_can_edit_a_links_url_and_label(client):
+    _seed(f"editor-admin@{_HOST}", role=Role.ADMIN)
+    movie = _publish("Edit Film", "edit-film", with_links=2, adder=_seed(f"editor-adder@{_HOST}"))
+
+    _login(client, f"editor-admin@{_HOST}")
+    link = _links_for(movie.id)[0]
+    queue = client.get("/admin-panel/vault/")
+    response = client.post(
+        f"/admin-panel/vault/{link.id}/edit/",
+        data={
+            "csrf_token": _csrf(queue.text),
+            "label": "Renamed Mirror",
+            "url": "https://renamed.example/watch",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    async def updated() -> VaultLink:
+        async with SessionLocal() as session:
+            return await session.get(VaultLink, link.id)
+
+    edited = asyncio.run(updated())
+    assert edited.url == "https://renamed.example/watch"
+    assert edited.label == "Renamed Mirror"
+
+
+def test_admin_edit_redirects_to_title_page(client):
+    _seed(f"editbk-admin@{_HOST}", role=Role.ADMIN)
+    movie = _publish("Bk Film", "bk-film", with_links=2, adder=_seed(f"bk-adder@{_HOST}"))
+
+    _login(client, f"editbk-admin@{_HOST}")
+    link = _links_for(movie.id)[0]
+    page = client.get(f"/admin-panel/vault/titles/movie/{movie.id}/")
+    response = client.post(
+        f"/admin-panel/vault/{link.id}/edit/",
+        data={"csrf_token": _csrf(page.text), "label": "Back", "url": "https://back.example/watch"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert response.headers["location"].endswith(f"/admin-panel/vault/titles/movie/{movie.id}/")
+
+
+def test_admin_edit_rejects_bad_url(client):
+    _seed(f"editor2-admin@{_HOST}", role=Role.ADMIN)
+    movie = _publish("Guard Film", "guard-film", with_links=2, adder=_seed(f"guard-adder@{_HOST}"))
+
+    _login(client, f"editor2-admin@{_HOST}")
+    link = _links_for(movie.id)[0]
+    queue = client.get("/admin-panel/vault/")
+    client.post(
+        f"/admin-panel/vault/{link.id}/edit/",
+        data={"csrf_token": _csrf(queue.text), "label": "Bad", "url": "ftp://x.example/file"},
+        follow_redirects=False,
+    )
+
+    async def unchanged() -> VaultLink:
+        async with SessionLocal() as session:
+            return await session.get(VaultLink, link.id)
+
+    assert asyncio.run(unchanged()).url.startswith("https://src")
+
+
+# --- per-title management -----------------------------------------------------
+
+def test_vault_titles_browser_lists_all_titles(client):
+    _seed(f"browse-admin@{_HOST}", role=Role.ADMIN)
+    _publish("Alpha Film", "alpha-film", with_links=2, adder=_seed(f"alpha@{_HOST}"))
+    _publish("Beta Film", "beta-film", with_links=0)
+
+    _login(client, f"browse-admin@{_HOST}")
+    html = client.get("/admin-panel/vault/titles/").text
+    assert html  # page loads
+    assert "Alpha Film" in html
+    assert "Beta Film" in html  # even with zero links, it is manageable
+
+
+def test_vault_titles_search_filters(client):
+    _seed(f"search-admin@{_HOST}", role=Role.ADMIN)
+    _publish("Needle Film", "needle-film", with_links=1, adder=_seed(f"needle@{_HOST}"))
+    _publish("Hay Film", "hay-film")
+
+    _login(client, f"search-admin@{_HOST}")
+    html = client.get("/admin-panel/vault/titles/?q=needle").text
+    assert "Needle Film" in html
+    assert "Hay Film" not in html
+
+
+def test_title_manage_page_lists_all_links(client):
+    _seed(f"manage-admin@{_HOST}", role=Role.ADMIN)
+    movie = _publish("Manage Film", "manage-film", with_links=3, adder=_seed(f"mg-adder@{_HOST}"))
+
+    _login(client, f"manage-admin@{_HOST}")
+    html = client.get(f"/admin-panel/vault/titles/movie/{movie.id}/").text
+    assert html
+    assert "Manage Film" in html
+    assert "https://src0.example/watch" in html
+    assert "https://src2.example/watch" in html  # all 3, not just recents
+
+
+def test_series_manage_page_works(client):
+    _seed(f"s-manage-admin@{_HOST}", role=Role.ADMIN)
+
+    async def make() -> Series:
+        async with SessionLocal() as session:
+            s = Series(title="Manage Series", slug="manage-series", status=MovieStatus.PUBLISHED)
+            session.add(s)
+            await session.flush()
+            session.add(VaultLink(
+                series_id=s.id, url="https://s0.example/watch", label="S1",
+                kind="file", added_by=admin_id, status=VaultStatus.APPROVED,
+            ))
+            await session.commit()
+            return s
+
+    admin_id = _seed(f"s-manage-adder@{_HOST}")
+    series = asyncio.run(make())
+    _login(client, f"s-manage-admin@{_HOST}")
+    html = client.get(f"/admin-panel/vault/titles/series/{series.id}/").text
+    assert "Manage Series" in html
+    assert "https://s0.example/watch" in html
+
+
+def test_add_link_from_manage_page_by_title_id(client):
+    _seed(f"add2-admin@{_HOST}", role=Role.ADMIN)
+    movie = _publish("ById Film", "byid-film", with_links=1, adder=_seed(f"byid-adder@{_HOST}"))
+
+    _login(client, f"add2-admin@{_HOST}")
+    page = client.get(f"/admin-panel/vault/titles/movie/{movie.id}/")
+    response = client.post(
+        "/admin-panel/vault/add/",
+        data={
+            "csrf_token": _csrf(page.text),
+            "kind": "movie",
+            "title_id": str(movie.id),
+            "label": "From manage page",
+            "url": "https://frompage.example/watch",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert response.headers["location"].endswith(f"/admin-panel/vault/titles/movie/{movie.id}/")
+
+    async def got() -> VaultLink | None:
+        async with SessionLocal() as session:
+            return await session.scalar(select(VaultLink).where(VaultLink.url == "https://frompage.example/watch"))
+
+    link = asyncio.run(got())
+    assert link is not None and link.movie_id == movie.id
+
+
+def test_remove_from_manage_page_redirects_back(client):
+    _seed(f"rm-admin@{_HOST}", role=Role.ADMIN)
+    movie = _publish("Rm Film", "rm-film", with_links=2, adder=_seed(f"rm-adder@{_HOST}"))
+
+    _login(client, f"rm-admin@{_HOST}")
+    link = _links_for(movie.id)[0]
+    page = client.get(f"/admin-panel/vault/titles/movie/{movie.id}/")
+    response = client.post(
+        f"/admin-panel/vault/{link.id}/remove/",
+        data={"csrf_token": _csrf(page.text)},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert response.headers["location"].endswith(f"/admin-panel/vault/titles/movie/{movie.id}/")
+
+
 # --- vault display -----------------------------------------------------------
 
 def test_vault_hidden_with_fewer_than_two_approved_links(client):

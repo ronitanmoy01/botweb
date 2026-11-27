@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="mx-auto max-w-5xl px-4 py-12">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">{{ item.title }}</h1>
+      <p class="mt-1 text-sm text-gray-400">
+        <span class="capitalize">{{ kind }}</span>
+        · {{ item.status }}
+        · {{ links|length }} {{ links|length == 1 and 'link' or 'links' }}
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <a href="/{{ kind == 'series' and 'series' or 'movie' }}/{{ item.slug }}/" class="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">View page</a>
+      <a href="/admin-panel/vault/titles/" class="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">← All titles</a>
+    </div>
+  </div>
+
+  {% if flash_message %}
+  <div class="mt-5 rounded-lg bg-green-500/10 border border-green-500/20 px-4 py-3 text-sm text-green-400">{{ flash_message }}</div>
+  {% endif %}
+
+  {% if links %}
+  <h2 class="mt-8 mb-3 text-lg font-semibold">Links</h2>
+  <div class="overflow-hidden rounded-lg border border-white/10">
+    <table class="w-full text-sm">
+      <thead class="bg-surface text-left text-gray-400">
+        <tr>
+          <th class="px-4 py-3">Label</th>
+          <th class="px-4 py-3">URL</th>
+          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3">Added by</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for row in links %}
+        <tr>
+          <td class="px-4 py-3 font-medium">{{ row.link.label or "—" }}</td>
+          <td class="px-4 py-3 text-blue-400 break-all">
+            <a href="{{ row.link.url }}" target="_blank" rel="noopener noreferrer">{{ row.link.url }}</a>
+          </td>
+          <td class="px-4 py-3">
+            <span class="rounded bg-white/10 px-2 py-0.5 text-xs capitalize text-gray-300">{{ row.link.status }}</span>
+          </td>
+          <td class="px-4 py-3 text-gray-400">@{{ row.adder }}</td>
+          <td class="px-4 py-3 whitespace-nowrap">
+            <button type="button" class="rounded bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20"
+                    onclick="var r=this.closest('tr').nextElementSibling; if(r){r.classList.toggle('hidden');}">Edit</button>
+            <form method="post" action="/admin-panel/vault/{{ row.link.id }}/remove/" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button type="submit" class="rounded bg-red-600/70 px-3 py-1.5 text-xs font-semibold hover:opacity-90">Remove</button>
+            </form>
+          </td>
+        </tr>
+        <tr class="hidden bg-surface/50">
+          <td colspan="5" class="px-4 py-3">
+            <form method="post" action="/admin-panel/vault/{{ row.link.id }}/edit/" class="flex flex-wrap items-end gap-3">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <label class="block">
+                <span class="text-xs text-gray-400">Label</span>
+                <input name="label" type="text" value="{{ row.link.label }}" maxlength="100"
+                       class="mt-1 w-40 rounded bg-surface px-3 py-2 text-sm text-white ring-1 ring-white/10">
+              </label>
+              <label class="block flex-1 min-w-64">
+                <span class="text-xs text-gray-400">URL</span>
+                <input name="url" type="url" value="{{ row.link.url }}" required
+                       class="mt-1 w-full rounded bg-surface px-3 py-2 text-sm text-white ring-1 ring-white/10">
+              </label>
+              <button type="submit" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold hover:opacity-90">Update link</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="mt-6 text-sm text-gray-400">No links yet — add the first one below.</p>
+  {% endif %}
+
+  <h2 class="mt-8 mb-3 text-lg font-semibold">Add a link to this {{ kind }}</h2>
+  <form method="post" action="/admin-panel/vault/add/" class="flex flex-wrap items-end gap-3 rounded-lg bg-card border border-white/10 p-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="kind" value="{{ kind }}">
+    <input type="hidden" name="title_id" value="{{ item.id }}">
+    <input type="hidden" name="title" value="{{ item.title }}">
+    <label class="block">
+      <span class="text-xs text-gray-400">Label</span>
+      <input name="label" type="text" placeholder="Server 1" maxlength="100"
+             class="mt-1 rounded bg-surface px-3 py-2 text-sm text-white ring-1 ring-white/10">
+    </label>
+    <label class="block flex-1 min-w-64">
+      <span class="text-xs text-gray-400">URL</span>
+      <input name="url" type="url" placeholder="https://example.com/watch" required
+             class="mt-1 w-full rounded bg-surface px-3 py-2 text-sm text-white ring-1 ring-white/10">
+    </label>
+    <button type="submit" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold hover:opacity-90">Add link</button>
+  </form>
+</section>
+{% endblock %}
