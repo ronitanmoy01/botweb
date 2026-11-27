@@ -18,8 +18,7 @@ from app.core.templating import templates
 from app.dependencies.auth import check_csrf, get_csrf_token, require_roles
 from app.models.email import EmailOutbox, EmailStatus
 from app.models.user import Role, User
-from app.services.email import _message, _send_kwargs, render_email
-import aiosmtplib
+from app.services.email import render_email, send_message
 
 router = APIRouter(include_in_schema=False, prefix="/admin-panel/email")
 _URL = "/admin-panel/email/"
@@ -102,9 +101,10 @@ async def send_test(
         "test_email",
         {"display_name": admin.display_name or "there", "from_address": settings.mail_from_address},
     )
-    message = _message(html, text, f"{settings.site_name} — email test", recipient)
     try:
-        await aiosmtplib.send(message, sender=settings.mail_from_address, **_send_kwargs())
+        await send_message(
+            recipient, f"{settings.site_name} — email test", html, text
+        )
     except Exception as exc:  # noqa: BLE001 - surface the failure, don't kill the panel
         request.session["flash_message"] = f"Test email failed: {type(exc).__name__}: {exc}"
         return RedirectResponse(_URL, status_code=303)

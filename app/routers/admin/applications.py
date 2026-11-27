@@ -25,7 +25,7 @@ from app.models.community import (
     RegistrationApplication,
 )
 from app.models.user import Role, User
-from app.services import invitations, points
+from app.services import invitations, points, tokens
 from app.services.admin_log import log_action
 from app.services.email import enqueue_email
 
@@ -108,8 +108,17 @@ async def approve_application(
         inviter = await session.get(User, invite.invited_by)
         if inviter is not None and amount:
             inviter.points_reserved = max(0, int(inviter.points_reserved) - amount)
+            # The inviter earns the cost back once the invitee actually joins, so a
+            # successful invite costs nothing and builds reputation — same as the
+            # invitation service's own accept path.
+            await points.credit(
+                session, inviter, amount, PointsReason.INVITEE_JOINED,
+                f"invitation:reward:{invite.id}",
+                reference_type="invitation", reference_id=invite.id,
+            )
 
     log_action(session, admin, "application.approved", target=app.email)
+    await _queue_verification(session, user)
     await session.commit()
     request.session["flash_message"] = f"Approved {app.email}."
     return RedirectResponse(_URL, status_code=303)
@@ -146,3 +155,31 @@ def _now():
     from datetime import datetime, timezone
 
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+async def _queue_verification(session: AsyncSession, user: User) -> None:
+    """Send the new account its verification link, once, after approval."""
+    from datetime import timedelta
+
+    from app.core.config import get_settings
+    from app.models.tokens import EmailVerificationToken
+    from app.services.email import enqueue_email
+
+    settings = get_settings()
+    raw = await tokens.issue_token(
+        session, EmailVerificationToken, user.id,
+        lifetime=timedelta(hours=settings.email_verification_token_expire_hours),
+    )
+    await enqueue_email(
+        session,
+        recipient=user.email,
+        subject=f"Verify your {settings.site_name} email",
+        template_name="email_verification",
+        template_data={
+            "display_name": user.display_name,
+            "recipient_email": user.email,
+            "verify_link": f"{settings.app_base_url.rstrip('/')}/verify-email/{raw}/",
+            "expires_at": (_now() + timedelta(hours=settings.email_verification_token_expire_hours)).strftime("%Y-%m-%d %H:%M UTC"),
+        },
+        dedupe_key=f"email_verification:{user.id}:{raw[:16]}",
+    )

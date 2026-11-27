@@ -9,6 +9,7 @@ rolls back an already-committed business action.
 import json
 import logging
 from datetime import datetime, timezone
+from email.message import EmailMessage
 
 import aiosmtplib
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -60,8 +61,14 @@ def render_email(template_name: str, data: dict | None = None) -> tuple[str, str
     return html, text
 
 
-def _message(html: str, text: str, subject: str, recipient: str) -> str:
-    """Build an RFC-5322 message with UTF-8 HTML plus a plain-text alternative."""
+def _message(html: str, text: str, subject: str, recipient: str) -> EmailMessage:
+    """Build an RFC-5322 message with UTF-8 HTML plus a plain-text alternative.
+
+    Returns an ``EmailMessage`` object, not its ``str()`` form: aiosmtplib needs
+    the real object to read the recipients for the SMTP envelope. A plain string
+    has no ``To`` header aiosmtplib can use, which is why sends failed with
+    "Recipients must be provided with raw messages".
+    """
     from email.message import EmailMessage
 
     settings = get_settings()
@@ -73,7 +80,7 @@ def _message(html: str, text: str, subject: str, recipient: str) -> str:
     msg.set_content(text or "This message requires an HTML-capable email client.", subtype="plain")
     if html:
         msg.add_alternative(html, subtype="html")
-    return str(msg)
+    return msg
 
 
 def _send_kwargs() -> dict:

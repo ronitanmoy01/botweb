@@ -157,7 +157,8 @@ def test_taken_email_message_does_not_confirm_account_exists(client):
         },
         follow_redirects=False,
     )
-    assert first.status_code == 303
+    assert first.status_code == 200
+    assert "Application submitted" in first.text
 
     repeat_code = _open_invite(client, email)
     repeat = client.post(

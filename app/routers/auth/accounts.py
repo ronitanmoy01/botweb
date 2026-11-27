@@ -10,6 +10,7 @@ from app.core.database import get_session
 from app.core.security import (
     DUMMY_PASSWORD_HASH,
     clear_login_failures,
+    hash_password,
     login_locked,
     password_problem,
     record_login_failure,
@@ -134,7 +135,18 @@ async def register_submit(
             errors=errors, email=email, display_name=display_name,
         )
 
-    user = await invitations.accept_invitation(session, invite_row, email, password, display_name)
+    # Registration does NOT create the account. A RegistrationApplication goes to
+    # the admin queue; an admin approving it creates the user and sends the
+    # verification link. This keeps membership gated behind a human decision.
+    from app.models.community import RegistrationApplication
+
+    app = RegistrationApplication(
+        email=email,
+        display_name=display_name.strip()[:100],
+        password_hash=hash_password(password),
+        invite_id=invite_row.id,
+    )
+    session.add(app)
     try:
         await session.commit()
     except IntegrityError:  # two registrations with the same email raced past the check above
@@ -144,10 +156,10 @@ async def register_submit(
             errors=[_REGISTER_FAILED], email=email,
         )
     request.session.pop(INVITE_SESSION_KEY, None)
-    await _queue_verification(session, user)
-    await session.commit()
-    _log_in(request, user)
-    return RedirectResponse("/", status_code=303)
+    return _render(
+        request, "auth/application_pending.html", "Application submitted",
+        email=email, display_name=display_name,
+    )
 
 
 async def _queue_verification(session: AsyncSession, user: User) -> None:

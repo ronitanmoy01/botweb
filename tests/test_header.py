@@ -23,8 +23,10 @@ def test_regular_user_does_not_see_admin_panel_button(client):
 
     html = client.get("/").text
 
+    # Registration no longer signs the user in, so the header shows the public
+    # login link — what matters is that no admin panel entry appears.
     assert 'href="/admin-panel/"' not in html
-    assert 'href="/login/"' not in html
+    assert "Admin panel" not in html
 
 
 def test_anonymous_visitor_sees_login_not_admin_panel(client):

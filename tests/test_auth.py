@@ -58,8 +58,12 @@ def admin_user() -> User:
     return _seed("admin-2026@example.com", "password1234", "Admin", Role.SUPER_ADMIN)
 
 
-def _join(client, email: str, password: str, name: str) -> None:
-    """Invite someone and sign them up through the invite link — the only way in."""
+def _join(client, email: str, password: str, name: str, approve: bool = False) -> None:
+    """Invite someone and sign them up through the invite link — the only way in.
+
+    Registration now creates a pending application only. Pass ``approve=True``
+    to also have an admin approve it, which is what creates the real account.
+    """
 
     async def setup() -> str:
         async with SessionLocal() as session:
@@ -85,6 +89,35 @@ def _join(client, email: str, password: str, name: str) -> None:
         follow_redirects=False,
     )
 
+    if approve:
+        from app.models.community import ApplicationStatus, RegistrationApplication
+
+        async def approve() -> None:
+            async with SessionLocal() as session:
+                app = await session.scalar(
+                    __import__("sqlalchemy").select(RegistrationApplication).where(RegistrationApplication.email == email)
+                )
+                assert app is not None
+                admin = await session.scalar(
+                    __import__("sqlalchemy").select(User).where(User.email == "admin@example.com")
+                )
+                if admin is None:
+                    admin = User(email="admin@example.com", password_hash=hash_password("password1234"), display_name="Admin", role=Role.SUPER_ADMIN)
+                    session.add(admin)
+                    await session.flush()
+                # Mirror the real approve_application route: the application's
+                # password hash becomes the account, and the row is closed.
+                user = User(email=app.email, password_hash=app.password_hash, display_name=app.display_name, role=Role.USER)
+                session.add(user)
+                await session.flush()
+                app.status = ApplicationStatus.APPROVED
+                app.decided_by = admin.id
+                app.user_id = user.id
+                app.decided_at = app.decided_at or None
+                await session.commit()
+
+        asyncio.run(approve())
+
 
 def test_register_without_invite_shows_closed_page(client):
     response = client.get("/register/")
@@ -93,16 +126,24 @@ def test_register_without_invite_shows_closed_page(client):
     assert "invite-only" in response.text
 
 
-def test_register_with_invite_creates_user_and_redirects(client):
-    _join(client, "reader-2026@example.com", "securepassword123", "Test User")
+def test_register_with_invite_creates_pending_application_not_user(client):
+    from app.models.community import ApplicationStatus, RegistrationApplication
 
-    async def exists() -> bool:
+    _join(client, "newuser@example.com", "securepassword123", "Test User", approve=False)
+
+    async def state() -> tuple:
         async with SessionLocal() as session:
-            return await session.scalar(
-                __import__("sqlalchemy").select(User.id).where(User.email == "reader-2026@example.com")
-            ) is not None
+            app = await session.scalar(
+                __import__("sqlalchemy").select(RegistrationApplication).where(RegistrationApplication.email == "newuser@example.com")
+            )
+            user = await session.scalar(
+                __import__("sqlalchemy").select(User.id).where(User.email == "newuser@example.com")
+            )
+            return (app.status if app else None, user)
 
-    assert asyncio.run(exists())
+    status, user = asyncio.run(state())
+    assert status == ApplicationStatus.PENDING  # waiting on admin, not auto-created
+    assert user is None  # the account does not exist until an admin approves it
 
 
 def test_register_rejects_short_password(client):
@@ -178,7 +219,11 @@ def test_post_without_csrf_token_is_forbidden(client, admin_user):
 
 
 def test_regular_user_cannot_open_admin_panel(client):
-    _join(client, "reader-2026@example.com", "securepassword123", "Reader")
+    _join(client, "reader-2026@example.com", "securepassword123", "Reader", approve=True)
+    client.post(
+        "/login/",
+        data={"email": "reader-2026@example.com", "password": "securepassword123", "csrf_token": _csrf(client)},
+    )
 
     response = client.get("/admin-panel/")
 
@@ -208,6 +253,34 @@ def test_register_ignores_submitted_role(client):
             "csrf_token": _extract_csrf(form.text),
         },
     )
+
+    # Registration no longer creates the account; approve the application first
+    # so the created user can be inspected.
+    async def approve() -> None:
+        from app.models.community import ApplicationStatus, RegistrationApplication
+
+        async with SessionLocal() as session:
+            app = await session.scalar(
+                __import__("sqlalchemy").select(RegistrationApplication).where(RegistrationApplication.email == "role-2026@example.com")
+            )
+            assert app is not None
+            admin = await session.scalar(
+                __import__("sqlalchemy").select(User).where(User.email == "admin@example.com")
+            )
+            if admin is None:
+                admin = User(email="admin@example.com", password_hash=hash_password("password1234"), display_name="Admin", role=Role.SUPER_ADMIN)
+                session.add(admin)
+                await session.flush()
+            user = User(email=app.email, password_hash=app.password_hash, display_name=app.display_name, role=Role.USER)
+            session.add(user)
+            await session.flush()
+            app.status = ApplicationStatus.APPROVED
+            app.decided_by = admin.id
+            app.user_id = user.id
+            app.decided_at = app.decided_at or None
+            await session.commit()
+
+    asyncio.run(approve())
 
     async def role() -> str:
         async with SessionLocal() as session:
